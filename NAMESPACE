@@ -1,0 +1,8 @@
+useDynLib(ppmSuite)
+
+export(gaussian_ppmx)
+export(ordinal_ppmx)
+export(sppm)
+export(rppmx)
+
+importFrom("stats", "sd")

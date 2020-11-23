@@ -1,0 +1,30 @@
+Package: ppmSuite
+Type: Package
+Title: A Collection of Models that Employ a Prior Distribution on
+        Partitions
+Version: 0.1.0
+Authors@R: c(
+  person(given = "Garritt L.", family = "Page", email = "page@stat.byu.edu", role = c("aut", "cre", "cph")),
+	person(given = "S. McKay", family = "Curtis", email = "s.mckay.curtis@gmail.com", role = c("ctb", "cph")),
+	person(given = "Radford M.", family = "Neal", role = c("ctb", "cph")))
+Maintainer: Garritt L. Page <page@stat.byu.edu>
+Description: Provides functions that fit hierarchical Gaussian and probit ordinal models.  
+                A (covariate dependent) product partition model is used as a prior.
+                If a covariate dependent product partition model  is selected,  
+                then all the options detailed in Page, G.L.; Quintana, F.A.; (2018)
+                <doi:10.1007/s11222-017-9777-z> are available.  In addition, a function
+                that fits a Gaussian likelihood spatial product partition model that is 
+                detailed in Page, G.L.; Quintana, F.A.; (2016) <doi:10.1214/15-BA971> is 
+                also provided.
+Depends: R (>= 3.5.0)
+License: GPL
+Encoding: UTF-8
+LazyData: true
+Suggests: cluster
+NeedsCompilation: yes
+Packaged: 2020-11-20 03:02:31 UTC; gpage
+Author: Garritt L. Page [aut, cre, cph],
+  S. McKay Curtis [ctb, cph],
+  Radford M. Neal [ctb, cph]
+Repository: CRAN
+Date/Publication: 2020-11-23 08:50:02 UTC
