@@ -171,7 +171,7 @@ void mcmc_sppm(int *draws, int *burn, int *thin, int *nobs, int *npred, int *coh
 
 	// stuff that I need to update Si (cluster labels);
 	int indx;
-	double auxm, auxs2, lCo, lCn, lCn_1;
+	double auxm, auxs2, lCo=0, lCn=0, lCn_1=0;
 	double mudraw, sigdraw, maxph, denph, cprobh;
 
 	double *ph = R_VectorInit(*nobs, 0.0);
@@ -185,7 +185,7 @@ void mcmc_sppm(int *draws, int *burn, int *thin, int *nobs, int *npred, int *coh
 
 
 	// Stuff to do predictions
-	double lC1, mupred=0, sig2pred=1.0;
+	double lC1=log(1), mupred=0, sig2pred=1.0;
 
 	// Stuff to compute lpml, likelihood, and WAIC
 	double lpml_iter, elppdWAIC;
@@ -456,7 +456,8 @@ void mcmc_sppm(int *draws, int *burn, int *thin, int *nobs, int *npred, int *coh
 
 
 
-			cprobh= 0.0;;
+			cprobh= 0.0;
+			iaux=nclus_iter+1;
 			for(k = 0; k < nclus_iter+1; k++){
 
 				cprobh = cprobh + probh[k];

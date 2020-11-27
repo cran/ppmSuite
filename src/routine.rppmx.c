@@ -54,7 +54,7 @@ void rppmx(int *N, int *similarity_function, int *simparm, double *M, int *ncon,
 	int i, ii, k, p, c, iaux, nhtmp;
 	double maxph, cprobh, denph, uu, xi;
 	double sumx0, sumx20, sumx, sumx2;
-	double lgconY, lgconN, lgcatY, lgcatN, lgcon1, lgcat1;
+	double lgconY, lgconN, lgcatY, lgcatN, lgcon1=0.0, lgcat1=0.0;
 	double *ph = R_Vector(*N);
 	double *probh = R_Vector(*N);
 	int nhc0[*N], nhc[*N], nhc1[*N];
@@ -276,7 +276,7 @@ void rppmx(int *N, int *similarity_function, int *simparm, double *M, int *ncon,
 //		Rprintf("uu = %f\n", uu);
 
 		cprobh= 0.0;
-
+    iaux=nk[0]+1;
 		for(k = 0; k < nk[0]+1; k++){
 
 			cprobh = cprobh + probh[k];

@@ -169,8 +169,8 @@ void ordinal_ppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *n
     double *ispred_iter = R_VectorInit(*nobs, 0.0);
     int isordpred_iter[*nobs];
 
-    double *ppred_iter = R_Vector((*npred)*(*nobs));
-    double *rbpred_iter = R_Vector((*npred)*(*nobs));
+    double *ppred_iter = R_Vector((*npred));
+    double *rbpred_iter = R_Vector((*npred));
     int ordppred_iter[*npred];
     int rbordpred_iter[*npred];
 
@@ -185,7 +185,7 @@ void ordinal_ppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *n
 	// ===================================================================================
 	// stuff that I need to update Si (cluster labels);
 	int nhtmp;
-	double auxm, auxs2, tmp, sumdis,npdN,npdY,npd;
+	double auxm, auxs2, tmp, npdN,npdY,npd;
 	double mudraw, sdraw, maxph, denph, cprobh, uu;
 	double lgconN,lgconY,lgcatN,lgcatY,lgcondraw,lgcatdraw;
 	double lgcont,lgcatt;
@@ -385,7 +385,6 @@ void ordinal_ppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *n
 					nhtmp = 0;
 					sumx = 0.0;
 					sumx2 = 0.0;
-					sumdis = 0.0;
 					for(jj = 0; jj < *nobs; jj++){
 						if(jj != j){
 							if(Si_iter[jj] == k+1){
@@ -557,8 +556,8 @@ void ordinal_ppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *n
 					npdY = (nh[k]+1)*(nh[k])/2;
 
           // This is cluster-mean Gower dissimilarity
-					// lgconN = -(alpha)*lgconN/(npdN);
-					// lgconY = -(alpha)*lgconY/(npdY);
+					 lgconN = -(alpha)*lgconN/(npdN);
+					 lgconY = -(alpha)*lgconY/(npdY);
 
 					// Just use cluster-total gower dissimilarity
 					lgconN = -(alpha)*lgconN;
@@ -759,7 +758,8 @@ void ordinal_ppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *n
 
 			uu = runif(0.0,1.0);
 
-			cprobh= 0.0;;
+			cprobh= 0.0;
+			iaux = nclus_iter+1;
 			for(k = 0; k < nclus_iter+1; k++){
 				cprobh = cprobh + probh[k];
 				if (uu < cprobh){

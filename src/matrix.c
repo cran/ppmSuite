@@ -513,8 +513,8 @@ int jacobi
 
     m[ij] = c*s*(mi-mj) + (c*c-s*s)*m[ij];
 
-    ii = i;
-    jj = j;
+    ii = i;lki = ii; //Initialization of lki is a modification from original file
+    jj = j;lkj = jj; //Initialization of lkj is a modification from original file
 
     for (k = i; k>0; k--)
     { mi = m[ii];

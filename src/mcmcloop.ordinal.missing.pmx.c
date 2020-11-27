@@ -5,7 +5,7 @@
  * to fit PPMx models when covariate values are missing and
  * with an ordinal response
  *
- * 
+ *
  ****************************************************************************************/
 
 #include "matrix.h"
@@ -81,13 +81,13 @@ void ordinal_missing_ppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon
               int *Cvec, int *PPM, int *cohesion, int *similarity_function, int *consim,
               double *M,
               int *y, double *co, double *Xcon, int *Xcat, int *Mcon, int *Mcat,
-			  int *npred, int *nordcat, double *Xconp, int *Xcatp, int *Mconp, int *Mcatp,
-		      double *simParms, double *dissimtn, double *dissimtt,
+			        int *npred, int *nordcat, double *Xconp, int *Xcatp, int *Mconp, int *Mcatp,
+		          double *simParms, double *dissimtn, double *dissimtt,
               int *calibrate, double *modelPriors, int *verbose, double *mh,
-			  double *mu, double *sig2, double *mu0, double *sig20,
-			  int *Si, int *nclus, double *zi, double *like, double *WAIC, double *lpml,
-			  double *ispred, int *isordpred, double *ppred, int *predclass, int *ordppred,
-			  double *rbpred, int *rbordpred, double *predclass_prob){
+			        double *mu, double *sig2, double *mu0, double *sig20,
+			        int *Si, int *nclus, double *zi, double *like, double *WAIC, double *lpml,
+			        double *ispred, int *isordpred, double *ppred, int *predclass, int *ordppred,
+			        double *rbpred, int *rbordpred, double *predclass_prob){
 
 
 
@@ -140,7 +140,7 @@ void ordinal_missing_ppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon
 
 	int nclus_iter = 0;
 
-	int kmenos, iaux;
+	int iaux;
 
 	int Si_iter[*nobs];
 	int nh[*nobs];
@@ -172,7 +172,6 @@ void ordinal_missing_ppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon
 	}
 
 
-	kmenos = nclus_iter;
 
 	double *sig2h = R_VectorInit(*nobs, 0.1);
 	double *muh = R_VectorInit(*nobs, 0.0);
@@ -181,8 +180,8 @@ void ordinal_missing_ppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon
 	double *ispred_iter = R_VectorInit(*nobs, 0.0);
 	int isordpred_iter[*nobs];
 
-	double *ppred_iter = R_Vector((*npred)*(*nobs));
-	double *rbpred_iter = R_Vector((*npred)*(*nobs));
+	double *ppred_iter = R_Vector((*npred));
+	double *rbpred_iter = R_Vector((*npred));
 	int ordppred_iter[*npred];
 	int rbordpred_iter[*npred];
 
@@ -260,7 +259,7 @@ void ordinal_missing_ppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon
 
 	// DP weight parameter
 	double Mdp = *M;
- 
+
 	// Similarity function parameters
 	// dirichlet denominator parameter
 	double *dirweights = R_VectorInit(max_C, simParms[5]);
@@ -610,9 +609,9 @@ void ordinal_missing_ppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon
 					if(npdN == 0) npdN = 1.0;
 					npdY = (nh[k]+1)*(nh[k])/2;
 
-                    // This is cluster-mean Gower dissimilarity
-					// lgconN = -(alpha)*lgconN/(npdN);
-					// lgconY = -(alpha)*lgconY/(npdY);
+           // This is cluster-mean Gower dissimilarity
+					 lgconN = -(alpha)*lgconN/(npdN);
+					 lgconY = -(alpha)*lgconY/(npdY);
 
 					// Just use cluster-total gower dissimilarity
 					lgconN = -(alpha)*lgconN;
@@ -729,7 +728,7 @@ void ordinal_missing_ppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon
 				                 log(Mdp) +
 				                 (1/((double)*ncon + (double)*ncat))*(lgcondraw + lgcatdraw);
 			}
-			
+
 			// If PPM rather than PPMx remove the covariate part
 			if(*PPM){
 				ph[nclus_iter] = dnorm(zi_iter[j],mudraw,sdraw,1) +
@@ -1391,7 +1390,7 @@ void ordinal_missing_ppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon
         // convert the auxiliary variable to the ordinal scale
         for(c=0; c < *nordcat-1; c++){
           if((ppred_iter[pp] > co[c]) & (ppred_iter[pp] < co[c+1])) ordppred_iter[pp] = c;
-          if((rbpred_iter[pp] > co[c]) & (rbpred_iter[pp] < co[c+1])) rbordpred_iter[pp] = c;
+          if((rbpred_iter[pp] > co[c]) & (rbpred_iter[pp] < co[c+1]) ) rbordpred_iter[pp] = c;
         }
 	   }
 	  }

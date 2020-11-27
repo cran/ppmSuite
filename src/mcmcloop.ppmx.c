@@ -187,8 +187,8 @@ void mcmcppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *ncat,
 	// Stuff to compute the posterior predictive
     double *ispred_iter = R_VectorInit(*nobs, 0.0);
 
-    double *ppred_iter = R_Vector((*npred)*(*npred));
-    double *rbpred_iter = R_Vector((*npred)*(*npred));
+    double *ppred_iter = R_Vector((*npred));
+    double *rbpred_iter = R_Vector((*npred));
     int predclass_iter[*npred];
     double *predclass_prob_iter = R_Vector((*npred)*(*nobs));
 
@@ -200,7 +200,7 @@ void mcmcppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *ncat,
 	// =============================================================================================
 	// stuff that I need to update Si (cluster labels);
 	int nhtmp;
-	double auxm, auxs2, tmp, sumdis,npdN,npdY,npd;
+	double auxm, auxs2, tmp, npdN,npdY,npd;
 	double mudraw, sdraw, maxph, denph, cprobh, uu;
 	double lgconN,lgconY,lgcatN,lgcatY,lgcondraw,lgcatdraw;
 	double lgcont,lgcatt;
@@ -390,7 +390,6 @@ void mcmcppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *ncat,
 						nhtmp = 0;
 						sumx = 0.0;
 						sumx2 = 0.0;
-						sumdis = 0.0;
 						for(jj = 0; jj < *nobs; jj++){
 							if(jj != j){
 								if(Si_iter[jj] == k+1){
@@ -774,7 +773,8 @@ void mcmcppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *ncat,
 
 
 
-			cprobh= 0.0;;
+			cprobh= 0.0;
+			iaux = nclus_iter+1;
 			for(k = 0; k < nclus_iter+1; k++){
 
 				cprobh = cprobh + probh[k];
@@ -1134,11 +1134,11 @@ void mcmcppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *ncat,
 						  if(npdN==0)npdN=1;
 						  npdY = (nh[k]+1)*(nh[k])/2;
 
-              // This is cluster-mean Gower dissimilarity
-						  // lgconN = -(alpha)*lgconN/(npdN);
-						  // lgconY = -(alpha)*lgconY/(npdY);
+            // This is cluster-mean Gower dissimilarity, but the next is used
+						   lgconN = -(alpha)*lgconN/(npdN);
+						   lgconY = -(alpha)*lgconY/(npdY);
 
-						    // Use the cluster-total Gower dissimilarity
+						    // Just Use the cluster-total Gower dissimilarity
 							  lgconN = -(alpha)*lgconN;
 							  lgconY = -(alpha)*lgconY;
 					  }
@@ -1335,7 +1335,7 @@ void mcmcppmx(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *ncat,
 
 				ppred_iter[pp] = rnorm(mupred, sqrt(sig2pred));
 				predclass_iter[pp] = iaux;
-                
+
                 mupred = 0.0;
                 for(k = 0; k < nclus_iter; k++){
                     mupred = mupred +  muh[k]*probh[k];

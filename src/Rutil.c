@@ -781,7 +781,8 @@ double gsimconNN(double m0, double v2, double s20, double sumx, double sumx2, do
 
 	double mus, muss, s2s, s2ss;
 	double ld1, ld2, ld3, ld4, ld5, ld6;
-	double out, out1, out2;
+	double out;
+//	double out1, out2;
 
 	s2s = 1/((n/v2) + (1/s20));
 	mus = s2s*((1/v2)*sumx + (1/s20)*m0);
@@ -809,12 +810,12 @@ double gsimconNN(double m0, double v2, double s20, double sumx, double sumx2, do
 
 
 	out = ld1 + ld2 - ld3;
-	out1 = ld1 + ld3 - ld4;
-	out2 = ld5 - ld6;
+//	out1 = ld1 + ld3 - ld4;
+//	out2 = ld5 - ld6;
 //	Rprintf("out = %f\n", out);
 //	Rprintf("out1 = %f\n", out1);
 	if(DD==1) out = ld1 + ld3 - ld4;
-	if(cal==1) out = ld5 - ld4;
+	if(cal==1) out = ld5 - ld6;
 	if(!logout) out = exp(out);
 	return(out);
 
@@ -1260,86 +1261,6 @@ double gsimcatDM(int* nobsj, double* dirweights, int C, int DD, int logout){
 
 
 
-void gcontvar(int n, int p, double *d, double *GpMG, double *xmat, double *xtmp,
-		    double sigma2, double *tau2, double *rho, double *psi,
-		    double *mn, double *beta, double *Sig){
-/**************************************************************************************************
- * Function that generates betas and sigma2 associated with the methodology
- * that was developed with Brian while at Raleigh
- *
- * Inputs:
- * n - number of spatial locations (and eigenvectors used to transform data)
- * p - number of predictors
- * d - vector of eigen-values
- * GpMP - matrix holding the GpMG matrix (G-eigenvector M-diag(neighborhood size))
- * xmat - nxp vector of transformed x values
- * xtmp - p+1 vector to hold the ith row of X matrix.
- *
- * sigma2 - the nugget
- * tau2 - (p+1)x1 vector that contains spatial variance (tau2y, tau2x1, ... tau2xp)
- * rho2 - (p+1)x1 vector that contains spatial correlation (rhoy, rhox1, ... rhoxp)
- * psi - nxp matrix that holds the correlations between ellth linear combination of
-         B^{-1}y and B^{-1}xj for j=1,...,p and i=1,...,n
- *
- * Outputs:
- * mean - nx1 scratch array of contiguous memory to hold conditional means
- * beta - nxp scratch array of contiguous memory to hold conditional betas
- * Sig - nxn scratch array of contiguous memory to hold conditional variance
- *
- *************************************************************************************************/
-
-	int i, j, ii;
-
-	double lamy, lamx, sumpsi;
-
-	double *b = R_Vector(p);
-
-//	RprintVecAsMat("tau2", tau2, 1, p+1);
-//	RprintVecAsMat("rho", rho, 1, p+1);
-//	RprintVecAsMat("psi", psi, 1, p+1);
-//	Rprintf("sig2bar = %f\n", *sig2bar);
-
-
-	for(i = 0; i < n; i++){
-
-		lamy = 1/(1-rho[0]*d[i]);
-
-		sumpsi = 0.0;
-		for(j = 0; j < p; j++){
-
-			lamx = 1/(1-rho[j+1]*d[i]);
-
-			beta[i*p+j] = psi[i*p+j]*sqrt(tau2[0]/tau2[j+1])*sqrt(lamy/lamx);
-			sumpsi = sumpsi + psi[i*p+j]*psi[i*p+j];
-
-			xtmp[j] = xmat[i*(p)+j];
-
-			b[j] = beta[i*p+j];
-
-		}
-
-//		RprintVecAsMat("b", b, 1, p);
-//		RprintVecAsMat("xtmp", xtmp, 1, p);
-
-		mn[i] = inner_product(xtmp, 1, b, 1, p);
-
-//		Rprintf("mn[i] = %f\n", mn[i]);
-
-		for(ii = 0; ii < n; ii++){
-
-			Sig[i*n+ii] = sigma2*GpMG[i*n+ii];
-
-			if(i == ii){Sig[i*n+ii] = Sig[i*n+ii] + tau2[0]*lamy*(1-sumpsi);}
-
-		}
-	}
-//	RprintVecAsMat("beta", beta, 1, p);
-//	Rprintf("lamy = %f\n", lamy);
-//	Rprintf("sigma2 = %f\n", sigma2);
-//	Rprintf("sumpsi = %f\n", sumpsi);
-
-//	Rprintf("sig2bar = %f\n", *sig2bar);
-}
 
 
 
@@ -1354,7 +1275,7 @@ double Cohesion1(double *s1, double *s2, double epsilon, int dim, int lg){
 	int ii;
 	double cent1,cent2,sdist,out,maxdist,dist;
 //	double sdist1, maxdist1, dist1;
-	cent1=0, cent2=0;
+	cent1=0, cent2=0, out=0;
 //	Rprintf("dim = %d\n", dim);
 	for(ii=0; ii<dim; ii++){
 
@@ -1432,7 +1353,7 @@ double Cohesion1(double *s1, double *s2, double epsilon, int dim, int lg){
 
 double Cohesion2(double *s1, double *s2, double a, int dim, int lg){
 	int i,ii;
-	double dist,out;
+	double dist,out=0;
 	for(i=0; i<dim; i++){
 		for(ii=0; ii<dim; ii++){
 			dist = sqrt((s1[i] - s1[ii])*(s1[i] - s1[ii]) +
@@ -1471,9 +1392,10 @@ double Cohesion3_4(double *s1, double *s2, double *mu0, double k0, double v0, do
 					int dim, int Cohesion, int lg){
 
 	int ii;
-	double kn,knn,vn,vnn,out,sbar1,sbar2,dL0,dLn,dLnn;
+	double kn,knn,vn,vnn,out=0,sbar1,sbar2,dL0,dLn,dLnn;
 	double s_sbar1,s_sbar2;
-	double sbar_mu01, sbar_mu02, sbar_mun1, sbar_mun2, mun1, mun2, munn1, munn2;
+	double sbar_mu01, sbar_mu02, sbar_mun1, sbar_mun2, mun1, mun2;
+//	double munn1, munn2;
 	double Vs1, Vs2, Vs3, Vs4;
 	double Vsbarmu01, Vsbarmu02, Vsbarmu03, Vsbarmu04;
 	double Vsbarmun1, Vsbarmun2, Vsbarmun3, Vsbarmun4;
@@ -1514,8 +1436,8 @@ double Cohesion3_4(double *s1, double *s2, double *mu0, double k0, double v0, do
 
 	mun1 = k0/(k0+dim)*mu0[0] + dim/(k0+dim)*sbar1;
 	mun2 = k0/(k0+dim)*mu0[1] + dim/(k0+dim)*sbar2;
-	munn1 = kn/(kn+dim)*mun1 + dim/(kn+dim)*sbar1;
-	munn2 = kn/(kn+dim)*mun2 + dim/(kn+dim)*sbar2;
+//	munn1 = kn/(kn+dim)*mun1 + dim/(kn+dim)*sbar1;
+//	munn2 = kn/(kn+dim)*mun2 + dim/(kn+dim)*sbar2;
 
 
 	sbar_mu01 = sbar1 - mu0[0];
@@ -1672,7 +1594,7 @@ void rPPMs(int cohesion, double M, int m, double *s1, double *s2, int *Si, int *
 
 	int i, ii, k;
 	int  counter, iaux;
-	double lCo, lCn, lC1, maxph, cprobh, denph, uu;
+	double lCo=0, lCn=0, lC1=0, maxph, cprobh, denph, uu;
 	double *s1tmp0 = R_Vector(m);
 	double *s2tmp0 = R_Vector(m);
 	double *s1tmp = R_Vector(m);
@@ -1805,7 +1727,7 @@ void rPPMs(int cohesion, double M, int m, double *s1, double *s2, int *Si, int *
 //		Rprintf("uu = %f\n", uu);
 
 		cprobh= 0.0;
-
+    iaux = nk[0]+1;
 		for(k = 0; k < nk[0]+1; k++){
 
 			cprobh = cprobh + probh[k];

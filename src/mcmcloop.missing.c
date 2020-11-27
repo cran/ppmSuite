@@ -80,7 +80,7 @@ void mcmc_missing(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *n
         int *Cvec, int *PPM, int *cohesion, int *similarity_function, int *consim,
         double *M,
         double *y, double *Xcon, int *Xcat, int *Mcon, int *Mcat,
-        int *npred, double *Xconp, int *Xcatp, int *Mconp, int *Mcatp, 
+        int *npred, double *Xconp, int *Xcatp, int *Mconp, int *Mcatp,
 		double *simParms, double *dissimtn, double *dissimtt,
         int *calibrate, double *modelPriors, int *verbose, double *mh,
 		double *mu, double *sig2, double *mu0, double *sig20,
@@ -184,8 +184,8 @@ void mcmc_missing(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *n
 	// Should I compute the posterior predictive
 	double *ispred_iter = R_VectorInit(*nobs, 0.0);
 
-	double *ppred_iter = R_Vector((*npred)*(*npred));
-	double *rbpred_iter = R_Vector((*npred)*(*npred));
+	double *ppred_iter = R_Vector((*npred));
+	double *rbpred_iter = R_Vector((*npred));
 	int predclass_iter[*npred];
 	double *predclass_prob_iter = R_Vector((*npred)*(*nobs));
 
@@ -588,9 +588,9 @@ void mcmc_missing(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *n
 					if(npdN == 0) npdN = 1.0;
 					npdY = (nh[k]+1)*(nh[k])/2;
 
-                    // This is cluster-mean Gower dissimilarity
-					// lgconN = -(alpha)*lgconN/(npdN);
-					// lgconY = -(alpha)*lgconY/(npdY);
+           // This is cluster-mean Gower dissimilarity
+					 lgconN = -(alpha)*lgconN/(npdN);
+					 lgconY = -(alpha)*lgconY/(npdY);
 
 					// Just use cluster-total gower dissimilarity
 					lgconN = -(alpha)*lgconN;
@@ -790,7 +790,8 @@ void mcmc_missing(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *n
 			uu = runif(0.0,1.0);
 
 
-			cprobh= 0.0;;
+			cprobh= 0.0;
+			iaux = nclus_iter+1;
 			for(k = 0; k < nclus_iter+1; k++){
 
 				cprobh = cprobh + probh[k];
@@ -1124,7 +1125,7 @@ void mcmc_missing(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *n
 
 					gtilY[k] = lgconY + lgcatY;
 					gtilN[k] = lgconN + lgcatN;
-					
+
 
   			        //////////////////////////////////////////////////////////
 	  			    // Gower Compute similarity values for gower dissimilarity
@@ -1160,7 +1161,7 @@ void mcmc_missing(int *draws, int *burn, int *thin, int *nobs, int *ncon, int *n
 			        //////////////////////////////////////////////////////////
 				    // End of Gower similarity values for gower dissimilarity
 				    //////////////////////////////////////////////////////////
-				    
+
 
 					// calculate the unormalized predictive probability
 					ph[k] = log((double) nh[k]) +
