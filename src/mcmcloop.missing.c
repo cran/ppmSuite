@@ -52,13 +52,14 @@
 * Xcatp = npred x ncat matrix of categorical covariates to make predictions
 * Mconp = npred x ncon matrix of logicals indicating if continuous covariate is missing
 * Mcatp = npred x ncat matrix of logicals indicating if categorical covariate is missing
-* simparms = vector containing similarity functions that are ordered in the following way;
+* simParms = vector containing similarity functions that are ordered in the following way;
+* dissimtn = dissimilarity matrix of training covariates for Gower 
+* dissimtt = dissimilarity matrix of testing covariates for Gower 
 * calibrate = integer indicating how similarity function should be calibrated
     0 - no calibration
     1 - "calibration" similarity function
     2 - "coarsened" similarity function
-* simparms = vector containing similarity functions that are ordered in the following way;
-* modelPriors =
+* modelPriors = priors from likelihood model 
 *
 * Output:
 * mu = nout x ncov matrix of MCMC iterates

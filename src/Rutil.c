@@ -71,15 +71,6 @@ double** R_MatrixInit(int nr, int nc, double init){
     return(m);
 }
 
-/* for possible Calloc versions
-void R_FreeMatrix(double** m, int nr, int nc){
-   Free(*m); // because it was allocated in a contiguous block
-   Free(m);
-//for (int i=nr-1; i>=nr; i--)
-//Free(m[i]);
-//Free(m);
-}
-*/
 
 double** R_Data2Matrix(double* d, int nr, int nc){
     double** m;
@@ -163,6 +154,18 @@ void Rprintmat(char* title, double **m, int nr, int nc){
     return;
 }
 
+// Print a vector as a matrix
+void RprintVecAsMat(char* title, double *v, int nr, int nc){
+    if (title!=NULL)
+	Rprintf("%s\n", title);
+    for (int i=0; i<nr; i++) {
+	for (int j=0; j<nc; j++)
+	    Rprintf("%f ", v[i*nc + j]);
+	Rprintf("\n");
+    }
+    Rprintf("\n");
+    return;
+}
 
 
 // for integers
@@ -188,18 +191,6 @@ void RprintImat(char* title, int** m, int nr, int nc){
 }
 
 
-// Print a vector as a matrix
-void RprintVecAsMat(char* title, double *v, int nr, int nc){
-    if (title!=NULL)
-	Rprintf("%s\n", title);
-    for (int i=0; i<nr; i++) {
-	for (int j=0; j<nc; j++)
-	    Rprintf("%f ", v[i*nc + j]);
-	Rprintf("\n");
-    }
-    Rprintf("\n");
-    return;
-}
 
 
 // Print a vector as a matrix
@@ -216,66 +207,6 @@ void RprintIVecAsMat(char* title, int *v, int nr, int nc){
 }
 
 
-// Matrix tranpose
-void mat_transpose(double *mat, double *tmat, int nr, int nc)
-	{
-
-//		RprintVecAsMat("Uk", mat, 1, (nr)*(nc));
-		int i, j;
-		for(i = 0; i < nr; i++)
-			{
-				for(j = 0; j < nc; j++)
-					{
-
-						tmat[j*nr + i] = mat[i*nc + j];
-
-
-					}
-
-			}
-//		RprintVecAsMat("Uk", mat, 1, (nr)*(nc));
-
-	}
-// Matrix tranpose that destroys original matrix.
-void mat_transpose2(double *m, int w, int h)
-{
-	int start, next, i;
-	double tmp;
-
-	for (start = 0; start <= w * h - 1; start++) {
-		next = start;
-		i = 0;
-		do {	i++;
-			next = (next % h) * w + next / h;
-		} while (next > start);
-		if (next < start || i == 1) continue;
-
-		tmp = m[next = start];
-		do {
-			i = (next % h) * w + next / h;
-			m[next] = (i == start) ? tmp : m[i];
-			next = i;
-		} while (next > start);
-	}
-}
-
-// trace of a square matrix.
-double mat_trace(double *matrix, int w)
-{
-	int i, ii;
-	double sum;
-
- 	sum = 0.0;
-	for (i = 0; i < w; i++){
-		for(ii = 0; ii < w; ii++){
-			if(i == ii) sum = sum + matrix[i*w+ii];
-		}
-	}
-
-	return(sum);
-}
-
-
 // factorial function using recursive arguments
 int factorial(int n){
 //	Rprintf("n = %d\n", n);
@@ -288,39 +219,6 @@ int factorial(int n){
 	}
 	return(fact);
 }
-
-
-// function that computes the mean of an contiguous array of memory
-double mean(double* x, int n){
-	int i;
-	double mn;
-	mn = 0.0;
-	for(i = 0; i < n; i++){
-		mn = mn + x[i]/((double) n);
-	}
-
-	return(mn);
-
-}
-
-//  Function that computes the sample variance (using n as the denominator)
-double var(double* x, int n){
-
-	int i;
-	double mn, mn2, vr;
-	mn = 0.0, mn2=0.0;
-	for(i = 0; i < n; i++){
-		mn = mn + x[i]/((double) n);
-		mn2 = mn2 + (x[i]*x[i])/((double) n);
-	}
-
-	vr = mn2 - mn*mn;
-
-	return(vr);
-
-}
-
-
 
 
 
@@ -415,24 +313,16 @@ void ran_dirich(double *alpha, int dim, double* scratch, double* out){
  * out     = array that holds the random values
  *
  *************************************************************/
-
     int h;
 	double sg = 0;
     /* Zero the "out" matrix */
-//	RprintVecAsMat("alpha", alpha, 1, dim);
-	for(h = 0; h < dim; h++)
-		{
+	for(h = 0; h < dim; h++){
+		scratch[h] = rgamma(alpha[h], 1);
+		sg = sg + scratch[h];
+	}
 
-			scratch[h] = rgamma(alpha[h], 1);
-//			Rprintf("rgamma = %f\n", scratch[h]);
-			sg = sg + scratch[h];
-//			Rprintf("sg = %f\n", sg);
-		}
-
-//	Rprintf("sg = %f\n", sg);
 	for(h = 0; h < dim; h++) out[h] = scratch[h]/sg;
 
-//	RprintVecAsMat("out", out, 1, dim);
 }
 
 
@@ -454,7 +344,7 @@ void ran_dirich(double *alpha, int dim, double* scratch, double* out){
 
 double rtnorm(double m, double s, double a, double b){
 
-  int jj;
+  int jj, counter;
   double a_term, b_term, Un, p, rtdraw, tmp, z;
 
 //	Rprintf("a = %f\n", a);
@@ -480,7 +370,7 @@ double rtnorm(double m, double s, double a, double b){
 
 	if(p == 1.0){
 		jj = 1;
-
+        counter = 0;
 		while(jj != 0){
 
 			a = (a - m)/s;
@@ -497,7 +387,15 @@ double rtnorm(double m, double s, double a, double b){
 
         	if((Un <= exp(-(z - tmp)*(z - tmp)/2)) & (z <= b)) jj = 0;
 //			Rprintf("jj = %d\n", jj);
-
+            counter = counter + 1;
+            if(counter > 1000) {
+              Rprintf("counter is greater than %d\n", counter);
+              Rprintf("m = %f\n", m);
+              Rprintf("s = %f\n", s);
+              Rprintf("a = %f\n", a);
+              Rprintf("b = %f\n", b);
+              break;
+            }
 		}
 
 //		Rprintf("z = %f\n", z);
@@ -1759,6 +1657,125 @@ void rPPMs(int cohesion, double M, int m, double *s1, double *s2, int *Si, int *
 
 
 
+static const double t1 = 0.15;
+static const double t2 = 2.18;
+static const double t3 = 0.725;
+static const double t4 = 0.45;
+
+/* Exponential rejection sampling (a,inf) */
+double ers_a_inf(double a) {
+  const double ainv = 1.0 / a;
+  double x, rho;
+  do {
+    x = rexp(ainv) + a; /* rexp works with 1/lambda */
+    rho = exp(-0.5 * pow((x - a), 2));
+  } while (runif(0, 1) > rho);
+  return x;
+}
+
+/* Exponential rejection sampling (a,b) */
+double ers_a_b(double a, double b) {
+  const double ainv = 1.0 / a;
+  double x, rho;
+  do {
+    x = rexp(ainv) + a; /* rexp works with 1/lambda */
+    rho = exp(-0.5 * pow((x - a), 2));
+  } while (runif(0, 1) > rho || x > b);
+  return x;
+}
+
+/* Normal rejection sampling (a,b) */
+double nrs_a_b(double a, double b) {
+  double x = -DBL_MAX;
+  while (x < a || x > b) {
+    x = rnorm(0, 1);
+  }
+  return x;
+}
+
+/* Normal rejection sampling (a,inf) */
+double nrs_a_inf(double a) {
+  double x = -DBL_MAX;
+  while (x < a) {
+    x = rnorm(0, 1);
+  }
+  return x;
+}
+
+/* Half-normal rejection sampling */
+double hnrs_a_b(double a, double b) {
+  double x = a - 1.0;
+  while (x < a || x > b) {
+    x = rnorm(0, 1);
+    x = fabs(x);
+  }
+  return x;
+}
+
+/* Uniform rejection sampling */
+double urs_a_b(double a, double b) {
+  const double phi_a = dnorm(a, 0.0, 1.0, FALSE);
+  double x = 0.0, u = 0.0;
+
+  /* Upper bound of normal density on [a, b] */
+  const double ub = a < 0 && b > 0 ? M_1_SQRT_2PI : phi_a;
+  do {
+    x = runif(a, b);
+  } while (runif(0, 1) * ub > dnorm(x, 0, 1, 0));
+  return x;
+}
+
+/* Previously this was refered to as type 1 sampling: */
+double r_lefttruncnorm(double a, double mean, double sd) {
+  const double alpha = (a - mean) / sd;
+  if (alpha < t4) {
+    return mean + sd * nrs_a_inf(alpha);
+  } else {
+    return mean + sd * ers_a_inf(alpha);
+  }
+}
+
+double r_righttruncnorm(double b, double mean, double sd) {
+  const double beta = (b - mean) / sd;
+  /* Exploit symmetry: */
+  return mean - sd * r_lefttruncnorm(-beta, 0.0, 1.0);
+}
+
+double r_truncnorm(double a, double b, double mean, double sd) {
+  const double alpha = (a - mean) / sd;
+  const double beta = (b - mean) / sd;
+  const double phi_a = dnorm(alpha, 0.0, 1.0, FALSE);
+  const double phi_b = dnorm(beta, 0.0, 1.0, FALSE);
+  if (beta <= alpha) {
+    return NA_REAL;
+  } else if (alpha <= 0 && 0 <= beta) { /* 2 */
+    if (phi_a <= t1 || phi_b <= t1) {   /* 2 (a) */
+      return mean + sd * nrs_a_b(alpha, beta);
+    } else { /* 2 (b) */
+      return mean + sd * urs_a_b(alpha, beta);
+    }
+  } else if (alpha > 0) {      /* 3 */
+    if (phi_a / phi_b <= t2) { /* 3 (a) */
+      return mean + sd * urs_a_b(alpha, beta);
+    } else {
+      if (alpha < t3) { /* 3 (b) */
+        return mean + sd * hnrs_a_b(alpha, beta);
+      } else { /* 3 (c) */
+        return mean + sd * ers_a_b(alpha, beta);
+      }
+    }
+  } else {                     /* 3s */
+    if (phi_b / phi_a <= t2) { /* 3s (a) */
+      return mean - sd * urs_a_b(-beta, -alpha);
+    } else {
+      if (beta > -t3) { /* 3s (b) */
+        return mean - sd * hnrs_a_b(-beta, -alpha);
+      } else { /* 3s (c) */
+        return mean - sd * ers_a_b(-beta, -alpha);
+      }
+    }
+  }
+}
 
 
 

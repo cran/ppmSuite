@@ -25,11 +25,11 @@ sppm(y,s,
 \item{s.pred}{Two-column matrix containing spatial locations at which out-of-sample predictions will be collected.}
 
 \item{cohesion}{Scalar that indicates which cohesion to use.
-\itemize{
-    \item 1 - distance from centroids \cr
-	  \item 2 - upper bound \cr
-	  \item 3 - auxiliary similarity \cr
-	  \item 4 - double dipper similarity \cr
+\enumerate{
+    \item distance from centroids \cr
+	  \item upper bound \cr
+	  \item auxiliary similarity \cr
+	  \item double dipper similarity \cr
   }
 }
 
