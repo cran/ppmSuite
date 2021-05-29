@@ -13,6 +13,7 @@ ordinal_ppmx(y, co, X=NULL,Xpred=NULL,
               meanModel=1,
               cohesion=1,
               M=1,
+              PPM = FALSE,
               similarity_function=1,
               consim=1,
               calibrate=0,
@@ -51,6 +52,9 @@ ordinal_ppmx(y, co, X=NULL,Xpred=NULL,
 }
 
 \item{M}{Precision parameter of the PPMx if a DP style cohesion is used.  See above.  Default is 1.}
+
+\item{PPM}{Logical argument that indicates if the PPM or PPMx partition model should be employed.  If PPM = FALSE, then an X matrix must be supplied.}
+
 
 \item{similarity_function}{Type of similarity function that is employed for the PPMx prior on partitions.  Options are
 \itemize{
@@ -119,7 +123,7 @@ ordinal_ppmx(y, co, X=NULL,Xpred=NULL,
 \details{
 This function is able to fit and ordinal probit model with either a  a PPM or PPMx prior on partitions.  For details on the ordinal probit model see Kottas et al (2005) and Page, Quintana, Rosner (2020).  Cutpoints listed in ``co'' can be arbitrarily selected and based on these latent variables are introduced.  Using the latent variables a Gaussian model with cluster-specific means and variances is specified. If meanModel = 2, then a ``global'' regression component is added to the mean resulting in a model with cluster-specific parallel regression lines.  Commonly used conjugate priors are then employed.
 
-If covariates containin missing values, then approach employed by page et al is automatically employed.
+If covariates containin missing values, then approach employed Page, Quintana, Mueller (2020) is automatically employed.  Missing values must be denoted using "NA". Currently, NAs cannot be accommodated if a ``global'' regression is desired.
 
 All continuous X's are standardized to have mean 0 and unit standard deviation before being passed to the PPMx partition model.  However, for meanModel = 2 the regression coefficients are estimated on the original scale and are ordered such that the continuous covariates appear first and the categorical covariates come after.
 

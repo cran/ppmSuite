@@ -9,6 +9,7 @@ gaussian_ppmx(y, X=NULL, Xpred=NULL,
                   meanModel=1,
                   cohesion=1,
                   M=1,
+                  PPM = FALSE,
                   similarity_function=1,
                   consim=1,
                   calibrate=0,
@@ -22,7 +23,7 @@ gaussian_ppmx(y, X=NULL, Xpred=NULL,
 
 \arguments{
 \item{y}{numeric vector for the response variable}
-\item{X}{a data frame whose columns consist of covariates that will be incorporated in the partition model. Those with class of "character" or "factor" will be treated as categorical covariates.  All others will be treated as continuous covariates.  If NULL, then a PPM model is fit.}
+\item{X}{a data frame whose columns consist of covariates that will be incorporated in the partition model. Those with class of "character" or "factor" will be treated as categorical covariates.  All others will be treated as continuous covariates.}
 
 \item{Xpred}{a data frame containing covariate values for which out-of-sample predictions are desired.  The format of and order of Xpred must be the same as that found in X.}
 
@@ -44,6 +45,8 @@ gaussian_ppmx(y, X=NULL, Xpred=NULL,
   }
 }
 \item{M}{Precision parameter.  Default is 1.}
+
+\item{PPM}{Logical argument that indicates if the PPM or PPMx partition model should be employed.  If PPM = FALSE, then an X matrix must be supplied.}
 
 \item{similarity_function}{Type of similarity function that is employed for the PPMx prior on partitions.  Options are 1-4 with
 
@@ -115,7 +118,7 @@ gaussian_ppmx(y, X=NULL, Xpred=NULL,
 \details{
 This function is able to fit a Gaussian PPM or PPMx model as detailed in (Mueller, Quintana, and Rosner, 2011).  The data model is a Gaussian distribution with cluster-specific means and variances.  If meanModel = 2, then a ``global'' regression component is added to the mean.  Conjugate priors are used for cluster-specific means while uniform priors are used for variance components.  A variety of options associated with the similarity function of the PPMx are available.  See Page, Quintana 2018; Mueller, Quintana, Rosner 2011 for more details.
 
-If covariate matrix contains missing values, then the approach described in  Page, Quintana, Mueller (2020) is automatically employed.
+If covariate matrix contains missing values, then the approach described in  Page, Quintana, Mueller (2020) is automatically employed.  Missing values must be denoted using "NA". Currently, NAs cannot be accommodated if a ``global'' regression is desired.
 
 All continuous X's are standardized to have mean 0 and unit standard deviation before being passed to the PPMx partition model.  However, for meanModel = 2 the regression coefficients are estimated on the original scale and are ordered such that the continuous covariates appear first and the categorical covariates come after.
 
@@ -209,7 +212,7 @@ nout <- (niter - nburn)/nthin
 mh <- c(1,10)
 
 # Run MCMC algorithm for Gaussian PPMx model
-out1 <- gaussian_ppmx(y=Ytrain, X=Xtrain, Xpred=Xtest, M=M,
+out1 <- gaussian_ppmx(y=Ytrain, X=Xtrain, Xpred=Xtest, M=M, PPM=FALSE,
               meanModel = 1,
 		          similarity_function=1,
 		          consim=1,
@@ -237,7 +240,8 @@ pairs(bear[trainObs,ck],col=out1$Si[1,], pch=out1$Si[1,])
 
 # Compare fit and predictions when covariates are not included
 # in the partition model.  That is, refit data with PPM rather than PPMx
-out2 <- gaussian_ppmx(y=Ytrain, X=NULL, Xpred=Xtest, M=M,
+out2 <- gaussian_ppmx(y=Ytrain, X=Xtrain, Xpred=Xtest, M=M, PPM=TRUE,
+              meanModel = 1,
 		          similarity_function=1,
 		          consim=1,
 		          calibrate=0,

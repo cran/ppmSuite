@@ -2,7 +2,7 @@ Package: ppmSuite
 Type: Package
 Title: A Collection of Models that Employ a Prior Distribution on
         Partitions
-Version: 0.1.3
+Version: 0.1.6
 Authors@R: c(
   person(given = "Garritt L.", family = "Page", email = "page@stat.byu.edu", role = c("aut", "cre", "cph")),
 	person(given = "S. McKay", family = "Curtis", email = "s.mckay.curtis@gmail.com", role = c("ctb", "cph")),
@@ -24,9 +24,9 @@ Encoding: UTF-8
 LazyData: true
 Suggests: cluster
 NeedsCompilation: yes
-Packaged: 2020-12-31 19:29:42 UTC; gpage
+Packaged: 2021-05-25 23:31:19 UTC; gpage
 Author: Garritt L. Page [aut, cre, cph],
   S. McKay Curtis [ctb, cph],
   Radford M. Neal [ctb, cph]
 Repository: CRAN
-Date/Publication: 2021-01-04 20:30:02 UTC
+Date/Publication: 2021-05-29 23:20:02 UTC

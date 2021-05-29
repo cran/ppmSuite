@@ -388,12 +388,8 @@ double rtnorm(double m, double s, double a, double b){
         	if((Un <= exp(-(z - tmp)*(z - tmp)/2)) & (z <= b)) jj = 0;
 //			Rprintf("jj = %d\n", jj);
             counter = counter + 1;
-            if(counter > 1000) {
-              Rprintf("counter is greater than %d\n", counter);
-              Rprintf("m = %f\n", m);
-              Rprintf("s = %f\n", s);
-              Rprintf("a = %f\n", a);
-              Rprintf("b = %f\n", b);
+            if(counter > 10000) {
+              Rprintf("random truncated normal sampler is stuck %d\n", counter);
               break;
             }
 		}

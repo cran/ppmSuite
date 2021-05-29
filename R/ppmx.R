@@ -4,6 +4,7 @@
 gaussian_ppmx <- function(y,X=NULL,Xpred=NULL,
                            meanModel=1,
                            cohesion=1, M=1,
+                           PPM = FALSE,
                            similarity_function=1, consim=1,
                            calibrate=0,
                            simParms=c(0.0, 1.0, 0.1, 1.0, 2.0, 0.1, 1.0),
@@ -24,8 +25,6 @@ gaussian_ppmx <- function(y,X=NULL,Xpred=NULL,
   # If there is missing, then only meanModel 1 is available.
   out <- NULL
 
-  PPM <- ifelse(is.null(X), TRUE, FALSE)
-
   if(!is.data.frame(X) & !is.null(X)) X <- data.frame(X)
   if(!is.data.frame(Xpred) & !is.null(Xpred)){
     Xpred <- data.frame(Xpred);
@@ -34,9 +33,6 @@ gaussian_ppmx <- function(y,X=NULL,Xpred=NULL,
 
   cnames <- colnames(X)
 
-  if(is.null(X) & meanModel != 1){
-    stop("No training covariates are provided and a regression is included in the mean model")
-  }
 
   nout <- (draws-burn)/thin
   nobs <- length(y)
@@ -59,7 +55,7 @@ gaussian_ppmx <- function(y,X=NULL,Xpred=NULL,
   nmissing <- 0
   npred <- 0
 
-  # If at least on of X and or Xpred are not NULL
+  # If at least one of X and or Xpred are not NULL
   if(!(is.null(X) & is.null(Xpred))){
     nxobs <- ifelse(is.null(X), 0, nrow(X))
     npred <- ifelse(is.null(Xpred), 0, nrow(Xpred))
@@ -169,52 +165,22 @@ gaussian_ppmx <- function(y,X=NULL,Xpred=NULL,
     Xcon[is.na(Xcon)] <- 999;Xconp[is.na(Xconp)] <- 999;
     Xcat[is.na(Xcat)] <- 999;Xcatp[is.na(Xcatp)] <- 999;
 
-    message("There are", nmissing, "missing covariate values.
-        The missing covariate values will be
-        accommodated using extentions to the
+    message("There are ", nmissing, " missing covariate values.
+        They will be accommodated using extentions to the
         ppmx model detailed in Page et. al (2020)")
 
-		C.out <- .C("mcmc_missing",
-        as.integer(draws), as.integer(burn), as.integer(thin),
-        as.integer(nobs),as.integer(ncon), as.integer(ncat),
-        as.integer(Cvec), as.integer(PPM), as.integer(cohesion),
-        as.integer(similarity_function), as.integer(consim),
-        as.double(M),
-        as.double(y),
-        as.double(t(Xcon)),as.integer(t(Xcat)),
-        as.integer(t(Mcon)), as.integer(t(Mcat)),
-        as.integer(npred),
-        as.double(t(Xconp)),as.integer(t(Xcatp)),
-        as.integer(t(Mconp)), as.integer(t(Mcatp)),
-        as.double(simParms),
-        as.double(dissimtn),as.double(dissimtt),
-        as.integer(calibrate),as.double(modelPriors),
-        as.integer(verbose), as.double(mh),
-        mu.out=as.double(mu), sig2.out=as.double(sig2),
-        mu0.out=as.double(mu0), sig20.out=as.double(sig20),
-        Si.out=as.integer(Si), nclus.out=as.integer(nclus),
-        like.out=as.double(like), WAIC.out=as.double(WAIC),
-        lpml.out=as.double(lpml),ispred.out=as.double(ispred),
-        ppred.out=as.double(ppred),predclass.out=as.integer(predclass),
-        rbpred.out=as.double(rbpred),
-        predclass_prob.out=as.double(predclass_prob))
+    run <- .Call("GAUSSIAN_PPMX_MISSING",
+              as.double(y), as.integer(nobs),
+              as.double(t(Xcon)), as.integer(t(Mcon)), as.integer(ncon),
+              as.integer(t(Xcat)), as.integer(t(Mcat)),as.integer(ncat), as.integer(Cvec),
+              as.integer(npred),
+              as.double(t(Xconp)), as.integer(t(Mconp)),
+              as.integer(t(Xcatp)), as.integer(t(Mcatp)),
+              as.double(M), as.integer(meanModel), as.double(modelPriors), as.double(simParms),
+              as.integer(PPM), as.integer(cohesion), as.integer(similarity_function),as.integer(consim),
+              as.double(dissimtn), as.double(dissimtt), as.integer(calibrate), as.double(mh),
+              as.integer(verbose), as.integer(draws), as.integer(burn), as.integer(thin))
 
-
-        out$mu <- matrix(C.out$mu.out, nrow=nout, byrow=TRUE)
-        out$sig2 <- matrix(C.out$sig2.out, nrow=nout, byrow=TRUE)
-        if(meanModel == 2) out$beta <- matrix(C.out$beta.out, nrow=nout, byrow=TRUE)
-        out$Si <- matrix(C.out$Si.out, nrow=nout, byrow=TRUE)
-        out$like <- matrix(C.out$like.out, nrow=nout, byrow=TRUE)
-        out$fitted <- matrix(C.out$ispred.out, nrow=nout, byrow=TRUE)
-        out$ppred <- matrix(C.out$ppred.out, nrow=nout, byrow=TRUE)
-        out$predclass <- matrix(C.out$predclass.out, nrow=nout, byrow=TRUE)
-        out$predclass_prob <- matrix(C.out$predclass_prob.out, nrow=nout, byrow=TRUE)
-        out$rbpred <- matrix(C.out$rbpred.out, nrow=nout, byrow=TRUE)
-        out$mu0 <- C.out$mu0.out
-        out$sig20 <- C.out$sig20.out
-        out$nclus <- C.out$nclus.out
-        out$WAIC <- C.out$WAIC.out
-        out$lpml <- C.out$lpml.out
 
   } else {
     run <- .Call("GAUSSIAN_PPMX",
@@ -229,11 +195,12 @@ gaussian_ppmx <- function(y,X=NULL,Xpred=NULL,
                   as.integer(verbose),
                   as.integer(draws), as.integer(burn), as.integer(thin))
 
-    if(meanModel == 2) colnames(run$beta) <- c(cnames[!catvars], cnames[catvars])
-    if(meanModel == 1) run <- run[-3]
-    out <- run
 
   }
+  if(meanModel == 2) colnames(run$beta) <- c(cnames[!catvars], cnames[catvars])
+  if(meanModel == 1) run <- run[-3]
+  if(length(y)*nout > 1e+05) run$predclass_prob <- NULL;
+  out <- run
 
   if(nmissing > 0) out$Missmat <- Mall
 

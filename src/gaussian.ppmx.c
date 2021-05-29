@@ -116,7 +116,7 @@ static void gaussian_ppmx(
 
   // Create Xmat to update the covariates from the
   // global regression that is included in the data model
-  // Only used if *meanModel == 2;
+  // Only used if *meanModel == 2;  Note, these are not standardized
   double *fullXmat = R_VectorInit((*nobs)*(ncov), 0.0);
   double *fullXmatp = R_VectorInit((*npred)*(ncov), 0.0);
   if(!(*PPM)){
@@ -917,7 +917,7 @@ static void gaussian_ppmx(
     
     //////////////////////////////////////////////////////////////////////////////////
     //
-    // update the the latent variables z_i using a truncated normal
+    // update sumy and sumy2
     //
     //////////////////////////////////////////////////////////////////////////////////
 
@@ -1141,7 +1141,7 @@ static void gaussian_ppmx(
         //
         /////////////////////////////////////////////
 
-        _like[j] = dnorm(y[j], mn, _sig2h[_Si[j]-1], 0);
+        _like[j] = dnorm(y[j], mn, sqrt(_sig2h[_Si[j]-1]), 0);
 
         // These are needed for WAIC
         mnlike[j] = mnlike[j] + (_like[j])/(double) nout;
