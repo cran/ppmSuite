@@ -1,7 +1,7 @@
-53bede64bf218d64fdc27f069da89e7c *DESCRIPTION
+04159d61792395625164ba4a2f2ebde5 *DESCRIPTION
 f3b574739612c4ea7d54cd3cf7728f17 *NAMESPACE
-cf4f943834e138e6de7e6d21bde3dbf2 *R/ordinal_ppmx.R
-c490003cf74b85c3c422963eb8a07ac2 *R/ppmx.R
+eb167958867dbeb361b666f76f879486 *R/ordinal_ppmx.R
+5c5789e9a583ee899b7f878834c9a828 *R/ppmx.R
 236652b37c4e9b943905272aa20f4ee1 *R/rppmx.R
 fe51b1418b011cf8d34b17ee06f252db *R/sppm.R
 ff89ac3a0b9b8b39b329ed73a405dee2 *R/work.R
@@ -19,12 +19,12 @@ ab9e9ab009bc39236055e8ab5a966e89 *man/scallops.Rd
 2deee6d3cd5589e22e2617a8207d9fec *man/sppm.Rd
 bfbaaae9054269b0004f69fb2c4d4929 *src/Rutil.c
 41bc5d75661d5c286327b0451341c370 *src/Rutil.h
-91ad5d0f7a9413db099a4a456a634eee *src/gaussian.ppmx.c
-54605dfb5f453afa128cdb90a1aa264d *src/gaussian.ppmx.missing.c
+d9b4d60d8d3ca7babbcd5adec8b8ecc0 *src/gaussian.ppmx.c
+50e648b98b39a49c2f278aed73c36260 *src/gaussian.ppmx.missing.c
 343c5c54163d81c06a55fb874560a8b7 *src/init.c
 eebece8e77090ec713c9462d49f03052 *src/matrix.c
 59361ca1e7c67019f745b86ca5cc5d99 *src/matrix.h
 001e5621070ce3d19fc8e52d4ac54f36 *src/mcmcloop.sppm.c
-bd82e0fd79cd87a7e161717f661a5fc2 *src/ordinal.ppmx.c
-5c1ba178c1a14e79a431a7fb84fe3054 *src/ordinal.ppmx.missing.c
+e733a8fbae76addeaab60247f8633caa *src/ordinal.ppmx.c
+4f25921bb1b80e5c23192fe84b69f1fc *src/ordinal.ppmx.missing.c
 87681530d47d75de38da7e9e55eb0e78 *src/routine.rppmx.c

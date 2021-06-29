@@ -99,6 +99,11 @@ ordinal_ppmx  <- function(y, co, X=NULL,Xpred=NULL,
     # standardize continuous covariates
     if(nxobs > 0){
       if(sum(!catvars) > 0){
+        mn <- apply(Xall[,!catvars, drop=FALSE],2,mean, na.rm=TRUE)
+        sd <- apply(Xall[,!catvars, drop=FALSE],2,sd, na.rm=TRUE)
+        if(sum(round(mn + sd,10) == 1) != length(mn)){
+          message("Continuous covariates are not standardized.")
+        }
   	    Xconstd <- apply(Xall[,!catvars, drop=FALSE], 2, scale)
   	    Xcon <- Xconstd[1:nobs,,drop=FALSE];
   	    ncon <- ncol(Xcon)
@@ -187,9 +192,7 @@ ordinal_ppmx  <- function(y, co, X=NULL,Xpred=NULL,
     Xcon[is.na(Xcon)] <- 999;Xconp[is.na(Xconp)] <- 999;
     Xcat[is.na(Xcat)] <- 999;Xcatp[is.na(Xcatp)] <- 999;
 
-    message("There are ", nmissing, " missing covariate values.
-        They will be accommodated using extentions to the
-        ppmx model detailed in Page et. al (2020)")
+    message(" There are a total of ", nmissing, " missing covariate values. \n They will be accommodated using extentions to the ppmx model detailed in Page et. al (2020).")
 
     run <- .Call("ORDINAL_PPMX_MISSING",
                   as.integer(y), as.double(co), as.integer(nobs), as.integer(nordcat),

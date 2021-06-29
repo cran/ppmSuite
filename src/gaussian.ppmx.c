@@ -124,7 +124,7 @@ static void gaussian_ppmx(
 	  for(b = 0; b < ncov; b++){
 	    if(b < *ncon){
           fullXmat[j*ncov+b] = Xcon[j*(*ncon)+b];
-          Xcon[j*(*ncon) + b] = (Xcon[j*(*ncon)+b] - mnmle[b])/sqrt(s2mle[b]);
+//          Xcon[j*(*ncon) + b] = (Xcon[j*(*ncon)+b] - mnmle[b])/sqrt(s2mle[b]);
 	    }
 
 	    if(b >= *ncon){
@@ -138,7 +138,7 @@ static void gaussian_ppmx(
       for(b = 0; b < ncov; b++){
         if(b < *ncon){
           fullXmatp[pp*ncov+b] = Xconp[pp*(*ncon)+b];
-          Xconp[pp*(*ncon) + b] = (Xconp[pp*(*ncon)+b] - mnmle[b])/sqrt(s2mle[b]);
+//          Xconp[pp*(*ncon) + b] = (Xconp[pp*(*ncon)+b] - mnmle[b])/sqrt(s2mle[b]);
 	    }
 	    if(b >= *ncon){
 	      fullXmatp[pp*ncov+b] = ((double) Xcatp[pp*(*ncat)+ (b-*ncon)]);

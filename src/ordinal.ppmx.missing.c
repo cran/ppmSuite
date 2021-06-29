@@ -165,7 +165,7 @@ void ordinal_ppmx_missing(
 	    if(b < *ncon){
           fullXmat[j*ncov+b] = Xcon[j*(*ncon)+b];
           if(Mcon[j*(*ncon) + b] == 0){
-            Xcon[j*(*ncon) + b] = (Xcon[j*(*ncon)+b] - mnmle[b])/sqrt(s2mle[b]);
+//            Xcon[j*(*ncon) + b] = (Xcon[j*(*ncon)+b] - mnmle[b])/sqrt(s2mle[b]);
 	      }
         }
 	    if(b >= *ncon){
@@ -180,7 +180,7 @@ void ordinal_ppmx_missing(
         if(b < *ncon){
           fullXmatp[pp*ncov+b] = Xconp[pp*(*ncon)+b];
           if(Mconp[pp*(*ncon) + b] == 0){
-            Xconp[pp*(*ncon) + b] = (Xconp[pp*(*ncon)+b] - mnmle[b])/sqrt(s2mle[b]);
+//            Xconp[pp*(*ncon) + b] = (Xconp[pp*(*ncon)+b] - mnmle[b])/sqrt(s2mle[b]);
 	      }
 	    }
 	    if(b >= *ncon){
@@ -273,9 +273,6 @@ void ordinal_ppmx_missing(
   double summu, summu2;
   
   //stuff I need to update beta;  Only used with meanModel = 2
-  double ld;
-  double *scr1 = R_Vector(*nobs);
-  double *scr2 = R_Vector(*nobs);
   double *sumyxbt = R_VectorInit(ncov,0.0);
   double *sumXXp = R_VectorInit(ncov*ncov, 0.0);
   double *Sstar = R_VectorInit(ncov*ncov, 0.0);
@@ -1156,76 +1153,6 @@ void ordinal_ppmx_missing(
     }
     
     
-/*
-    //////////////////////////////////////////////////////////////////////////////////
-    //
-    // Update beta for each cluster configuration.
-    // they will need to be saved in beta_iter.
-    //
-    //////////////////////////////////////////////////////////////////////////////////
-    
-    if(*meanModel==2){
-    
-      
-//      Rprintf("updating beta \n");
-
-      for(b = 0; b < ncov; b++){
-        sumyxbt[b] = 0.0;
-      	for(bb = 0; bb < ncov; bb++){
-      		sumXXp[b*ncov+bb] = 0.0;
-      	}
-      }
-      
-      
-      for(j = 0; j < *nobs; j++){
-      	for(b = 0; b < ncov; b++){
-      
-      	  sumyxbt[b] = sumyxbt[b] +  (1/_sig2h[_Si[j]-1])*fullXmat[j*ncov+b]*
-      					                                  (_zi[j] - _muh[_Si[j]-1]);
-      
-      	  for(bb = 0; bb < ncov; bb++){
-      
-            sumXXp[b*ncov+bb] = sumXXp[b*ncov+bb] + (1/_sig2h[_Si[j]-1])*
-      						                         fullXmat[j*ncov+b]*fullXmat[j*ncov+bb];
-      
-      	  }
-        }
-      }
-      
-      
-      for(b = 0; b < ncov; b++){
-      	sumyxbt[b] = sumyxbt[b] + 1/s2b*mb;
-      	// If this is commented out it implies that I am using a p(beta) propto 1 prior
-      	// and updating mubeta and s2beta does nothing as they are not included in the
-      	// prior.
-      	for(bb = 0; bb < ncov; bb++){
-          Sstar[b*ncov + bb] = sumXXp[b*ncov+bb];
-      
-      	  // If this is commented out it implies that I am using a p(beta) propto 1 prior
-          if(b==bb) Sstar[b*ncov + bb] = sumXXp[b*ncov+bb] + 1/s2b;
-      
-      	}
-      }
-      
-      
-     cholesky(Sstar, ncov, &ld);
-     inverse_from_cholesky(Sstar, scr1, scr2, ncov); //Sstar is now an inverse;
-      
-      
-      matrix_product(Sstar, sumyxbt, Mstar, ncov, 1, ncov);
-      
-      cholesky(Sstar, ncov , &ld);
-      
-      ran_mvnorm(Mstar, Sstar, ncov, scr1, scr2);
-  
-      
-      for(b = 0; b < ncov; b++){
-        _beta[b]=scr2[b];
-      }      
-      
-//      RprintVecAsMat("beta", _beta, 1, ncov);
-    }
-*/
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     //
@@ -1248,14 +1175,13 @@ void ordinal_ppmx_missing(
   
   
         _ispred[j] = rnorm(mn, sqrt(_sig2h[_Si[j]-1]));
-  
+        
         for(c=0; c < *nordcat-1; c++){
           if((_ispred[j] > co[c]) & (_ispred[j] < co[c+1])) _isordpred[j] = c;
         }
   
   
       }
-      
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////
@@ -1667,12 +1593,13 @@ void ordinal_ppmx_missing(
 
       for(j=0; j<*nobs; j++){
         Si[ii + nout*j] = _Si[j];
-        like[ii + nout*j] = _like[j];
-        ispred[ii + nout*j] = _ispred[j];
         zi[ii + nout*j] = _zi[j];
 
-        mu[ii + nout*j] = _muh[_Si[j]-1];
-        sig2[ii + nout*j] = _sig2h[_Si[j]-1];
+        
+        like[ii + nout*j] = _like[j];
+        ispred[ii + nout*j] = _ispred[j];
+        isordpred[ii + nout*j] = _isordpred[j];
+        
       }
 
       for(b = 0; b < ncov; b++){

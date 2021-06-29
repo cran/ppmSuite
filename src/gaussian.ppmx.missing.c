@@ -164,7 +164,7 @@ void gaussian_ppmx_missing(
 	    if(b < *ncon){
           fullXmat[j*ncov+b] = Xcon[j*(*ncon)+b];
           if(Mcon[j*(*ncon) + b] == 0){
-            Xcon[j*(*ncon) + b] = (Xcon[j*(*ncon)+b] - mnmle[b])/sqrt(s2mle[b]);
+//            Xcon[j*(*ncon) + b] = (Xcon[j*(*ncon)+b] - mnmle[b])/sqrt(s2mle[b]);
 	      }
 	      if(Mcon[j*(*ncon) + b] == 1){// if missing update auxiliary variable
 	        fullXmat[j*(*ncon) + b] = rnorm(mnmle[b], sqrt(s2mle[b]));
@@ -182,7 +182,7 @@ void gaussian_ppmx_missing(
         if(b < *ncon){
           fullXmatp[pp*ncov+b] = Xconp[pp*(*ncon)+b];
           if(Mconp[pp*(*ncon) + b] == 0){
-            Xconp[pp*(*ncon) + b] = (Xconp[pp*(*ncon)+b] - mnmle[b])/sqrt(s2mle[b]);
+//            Xconp[pp*(*ncon) + b] = (Xconp[pp*(*ncon)+b] - mnmle[b])/sqrt(s2mle[b]);
 	      }
 	    }
 	    if(b >= *ncon){
