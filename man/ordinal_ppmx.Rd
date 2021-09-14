@@ -30,9 +30,8 @@ ordinal_ppmx(y, co, X=NULL,Xpred=NULL,
 \item{co}{Vector specifying the boundaries associated with auxiliary variables of the probit model.  If the number of ordinal categories is c, then the dimension of this vector must be c+1.}
 
 \item{X}{a data frame whose columns consist of covariates that will be incorporated in the partition model.
-         Those with class of "character" or "factor" will be treated as categorical covaraites.  All others
-         will be treated as continuous covariates.  If NULL, then a PPM is fit.  All continuous covariates are
-         standardized to have mean 0 and variance 1 before employing the PPMx model.}
+         Those with class of "character" or "factor" will be treated as categorical covariates.  All others
+         will be treated as continuous covariates. }
 
 \item{Xpred}{a data frame containing covariate values for which out of sample predictions are desired.
              The format of Xpred must be the same as for X.}

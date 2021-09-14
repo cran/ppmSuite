@@ -19,6 +19,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <time.h>
 
 
 
@@ -349,11 +350,19 @@ static void ordinal_ppmx(
   // Beginning of the MCMC loop
   //
   // ===================================================================================
+  double calc_time = 0.0;
+  clock_t  begin = clock();
 
   for(i=0; i<*draws; i++){
   
 //    Rprintf("i = %d\n", i);
 
+    if(*verbose){
+      clock_t ith_iterate = clock();
+      calc_time = (ith_iterate - begin)/CLOCKS_PER_SEC;
+
+      Rprintf("Progress:%.1f%%, Time:%.1f seconds\r", ((double) (i+1) / (double) (*draws))*100.0, calc_time);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////
     //

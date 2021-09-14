@@ -19,6 +19,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <time.h>
 
 
 
@@ -348,11 +349,20 @@ static void gaussian_ppmx(
   // Beginning of the MCMC loop
   //
   // ===================================================================================
+  double calc_time = 0.0;
+  clock_t  begin = clock();
+
 
   for(i=0; i<*draws; i++){
   
 //    Rprintf("i = %d\n", i);
 
+    if(*verbose){
+      clock_t ith_iterate = clock();
+      calc_time = (ith_iterate - begin)/CLOCKS_PER_SEC;
+
+      Rprintf("Progress:%.1f%%, Time:%.1f seconds\r", ((double) (i+1) / (double) (*draws))*100.0, calc_time);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////
     //
@@ -1162,7 +1172,7 @@ static void gaussian_ppmx(
     if((i > (*burn-1)) & (i % (*thin) == 0)){
     
       for(pp = 0; pp < *npred; pp++){
-      
+//        Rprintf("pp = %d\n", pp);
         for(k = 0; k < _nclus; k++){
       
       	  lgconN=0.0, lgconY=0.0;
@@ -1482,9 +1492,9 @@ static void gaussian_ppmx(
         for(k = 0; k < _nclus+1; k++){
           probh[k] = ph[k]/denph;
         }
-        
+//        RprintVecAsMat("probh", probh, 1, _nclus+1);
         uu = runif(0.0,1.0);
-        
+//        Rprintf("uu = %f\n", uu);
         cprobh= 0.0;
         
         for(k = 0; k < _nclus+1; k++){
@@ -1494,10 +1504,7 @@ static void gaussian_ppmx(
             break;
           }
         }
-        
-        mudraw = rnorm(_mu0, sqrt(_sig20));
-        sdraw = runif(smin, smax);
-       
+//        Rprintf("cprobh = %f\n", cprobh);       
         if(iaux <= _nclus){
           mudraw = _muh[(iaux-1)];
           sdraw = sqrt(_sig2h[(iaux-1)]);
@@ -1514,10 +1521,12 @@ static void gaussian_ppmx(
           }
           mn = mudraw + xb;
         }
-        
         _ppred[pp] = rnorm(mn, sdraw);
         _predclass[pp] = iaux;
-        
+//        Rprintf("iaux = %d\n", iaux);
+//        Rprintf("_predclass[pp] = %d\n", _predclass[pp]);
+//        Rprintf("mn = %f\n", mn);
+//        RprintVecAsMat("_muh", _muh, 1, _nclus);
         mn = 0.0;
         for(k = 0; k < _nclus; k++){
           if(*meanModel == 1) mn = mn +  _muh[k]*probh[k];

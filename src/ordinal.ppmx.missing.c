@@ -1040,7 +1040,7 @@ void ordinal_ppmx_missing(
 
     for(j = 0; j < *nobs; j++){
     
-
+//      Rprintf("j = %d\n", j);
       if(*meanModel==1){
         mn = _muh[_Si[j]-1];
       }
@@ -1051,7 +1051,7 @@ void ordinal_ppmx_missing(
         }
         mn =  _muh[_Si[j]-1] + xb;
       }
-
+      
       _zi[j] = rtnorm(mn, sqrt(_sig2h[_Si[j]-1]), co[y[j]], co[y[j]+1]);
 //      _zi[j] = r_truncnorm(co[y[j]], co[y[j]+1], _muh[_Si[j]-1], sqrt(_sig2h[_Si[j]-1]));
 
@@ -1067,7 +1067,6 @@ void ordinal_ppmx_missing(
       
       }
     }
-
 
     //////////////////////////////////////////////////////////////////////////////////
     //
@@ -1115,7 +1114,6 @@ void ordinal_ppmx_missing(
       summu2 = summu2 + _muh[k]*_muh[k];  // This is used in the updating of sig20
     }
 
-
     //////////////////////////////////////////////////////////////////////////////////////
     //
     // Update mu0  prior mean of muh
@@ -1126,7 +1124,6 @@ void ordinal_ppmx_missing(
     mstar = s2star*((1/_sig20)*summu + (1/s2)*m);
     
     _mu0 = rnorm(mstar, sqrt(s2star));
-    
     
     //////////////////////////////////////////////////////////////////////////////////////
     //
@@ -1592,6 +1589,9 @@ void ordinal_ppmx_missing(
       nclus[ii] = _nclus;      
 
       for(j=0; j<*nobs; j++){
+        mu[ii + nout*j] = _muh[_Si[j]-1];
+        sig2[ii + nout*j] = _sig2h[_Si[j]-1];
+        
         Si[ii + nout*j] = _Si[j];
         zi[ii + nout*j] = _zi[j];
 
