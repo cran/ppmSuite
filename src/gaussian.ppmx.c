@@ -79,7 +79,11 @@ static void gaussian_ppmx(
   int i, j, jj, jjj, c, p, pp, k, ii, b, bb;
   int nout = (*draws - *burn)/(*thin);
   int ncov = (*ncon) + (*ncat);
- 
+   
+  for(ii = 0; ii < (nout*(*npred)); ii++){
+    ppred[ii] = 0.0;
+    rbpred[ii] = 0.0;
+  } 
   
   // determine the categorical variable with max number of categories
   int max_C;
@@ -1128,7 +1132,7 @@ static void gaussian_ppmx(
     // in sample prediction to assess model fit
     //
     ////////////////////////////////////////////////////////////////////////////////////////////
-    if((i > (*burn-1)) & (i % (*thin) == 0)){
+    if((i >= (*burn)) & ((i) % *thin ==0)){
       
       for(j = 0; j < *nobs; j++){
       
@@ -1169,7 +1173,7 @@ static void gaussian_ppmx(
     //
     ////////////////////////////////////////////////////////////////////////////////////////////
     
-    if((i > (*burn-1)) & (i % (*thin) == 0)){
+    if((i >= (*burn)) & ((i) % *thin ==0)){
     
       for(pp = 0; pp < *npred; pp++){
 //        Rprintf("pp = %d\n", pp);
@@ -1543,6 +1547,7 @@ static void gaussian_ppmx(
     
         
       }
+
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
@@ -1550,7 +1555,7 @@ static void gaussian_ppmx(
     // Store MCMC iterates
     //
     //////////////////////////////////////////////////////////////////////////////////////
-    if((i > (*burn-1)) & ((i+1) % *thin ==0)){
+    if((i >= (*burn)) & ((i) % *thin ==0)){
 
       mu0[ii] = _mu0;
       sig20[ii] = _sig20;
@@ -1574,6 +1579,8 @@ static void gaussian_ppmx(
         predclass[ii + nout*pp] = _predclass[pp];
         
         rbpred[ii + nout*pp] = _rbpred[pp];
+        
+
       }
       for(pp = 0; pp < (*nobs)*(*npred); pp++){
         predclass_prob[ii + nout*pp] = _predclass_prob[pp];

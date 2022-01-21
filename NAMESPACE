@@ -4,5 +4,6 @@ export(gaussian_ppmx)
 export(ordinal_ppmx)
 export(sppm)
 export(rppmx)
+export(ccp_ppm)
+export(icp_ppm)
 
-importFrom("stats", "sd")

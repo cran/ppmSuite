@@ -111,7 +111,7 @@ void ordinal_ppmx_missing(
   // k - cluster index
   // t - subset of covariates index
 
-  int i, ii, j, jj, jjj, c, p, pp, k, t, b;
+  int i, ii, j, jj, jjj, c, p, pp, k, b;
   int nout = (*draws-*burn)/(*thin);
   int ncov = *ncon + *ncat;
 
@@ -273,10 +273,10 @@ void ordinal_ppmx_missing(
   double summu, summu2;
   
   //stuff I need to update beta;  Only used with meanModel = 2
-  double *sumyxbt = R_VectorInit(ncov,0.0);
-  double *sumXXp = R_VectorInit(ncov*ncov, 0.0);
-  double *Sstar = R_VectorInit(ncov*ncov, 0.0);
-  double *Mstar = R_VectorInit(ncov, 0.0);
+//  double *sumyxbt = R_VectorInit(ncov,0.0);
+//  double *sumXXp = R_VectorInit(ncov*ncov, 0.0);
+//  double *Sstar = R_VectorInit(ncov*ncov, 0.0);
+//  double *Mstar = R_VectorInit(ncov, 0.0);
   
 
   // Stuff to compute lpml, likelihood, WAIC, and Rao-Blackwellized density values
@@ -300,7 +300,7 @@ void ordinal_ppmx_missing(
   double s0min=0, s0max=modelPriors[3];
 
   // priors for beta.  Only used if meanModel==2
-  double mb=0; double s2b = 100^2;
+//  double mb=0; double s2b = 100^2;
 
   // DP weight parameter
   double Mdp = *M;
@@ -989,7 +989,7 @@ void ordinal_ppmx_missing(
       } 
 
 
-      if((i > (*burn-1)) & (i % (*thin) == 0)){
+      if((i >= (*burn)) & ((i) % *thin ==0)){
         /////////////////////////////////////////////
         //
         // Compute the CPO and lpml using the mixture
@@ -1156,7 +1156,7 @@ void ordinal_ppmx_missing(
     // in sample prediction to assess model fit
     //
     ////////////////////////////////////////////////////////////////////////////////////////////
-    if((i > (*burn-1)) & (i % (*thin) == 0)){
+    if((i >= (*burn)) & ((i) % *thin ==0)){
       
       for(j = 0; j < *nobs; j++){
         
@@ -1187,7 +1187,7 @@ void ordinal_ppmx_missing(
     //
     ////////////////////////////////////////////////////////////////////////////////////////////
     
-    if((i > (*burn-1)) & (i % (*thin) == 0)){
+    if((i >= (*burn)) & ((i) % *thin ==0)){
     
       for(pp = 0; pp < *npred; pp++){
       
@@ -1582,7 +1582,7 @@ void ordinal_ppmx_missing(
     // Store MCMC iterates
     //
     //////////////////////////////////////////////////////////////////////////////////////
-    if((i > (*burn-1)) & ((i+1) % *thin ==0)){
+    if((i >= (*burn)) & ((i) % *thin ==0)){
 
       mu0[ii] = _mu0;
       sig20[ii] = _sig20;

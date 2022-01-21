@@ -2,7 +2,7 @@
 
 \alias{ordinal_ppmx}
 
-\title{Function that fits Ordinal probit model with a PPMx as a prior on partitions}
+\title{Function that fits ordinal probit model with a PPMx as a prior on partitions}
 
 \description{
 \code{ordinal_ppmx} is the main function used to fit ordinal probit model with a PPMx as a prior on partitions.
@@ -120,17 +120,17 @@ ordinal_ppmx(y, co, X=NULL,Xpred=NULL,
 }
 
 \details{
-This function is able to fit and ordinal probit model with either a  a PPM or PPMx prior on partitions.  For details on the ordinal probit model see Kottas et al (2005) and Page, Quintana, Rosner (2020).  Cutpoints listed in ``co'' can be arbitrarily selected and based on these latent variables are introduced.  Using the latent variables a Gaussian model with cluster-specific means and variances is specified. If meanModel = 2, then a ``global'' regression component is added to the mean resulting in a model with cluster-specific parallel regression lines.  Commonly used conjugate priors are then employed.
+This function fits an ordinal probit model with either a PPM or PPMx prior on partitions.  For details on the ordinal probit model see Kottas et al (2005) and Page, Quintana, Rosner (2020).  Cutpoints listed in the ``co'' argument can be arbitrarily selected, but values that are too far from zero will result in an algorithm that will require more burn-in.   Based on these cutpoints latent variables are introduced.  The latent variables are assumed to follow a Gaussian distribution with cluster-specific means and variances. If meanModel = 2, then a ``global'' regression component is added to the mean resulting in a model with cluster-specific parallel regression lines.  Commonly used conjugate priors are then employed in the regression component.
 
-If covariates containin missing values, then approach employed Page, Quintana, Mueller (2020) is automatically employed.  Missing values must be denoted using "NA". Currently, NAs cannot be accommodated if a ``global'' regression is desired.
+If covariates contain missing values, then the approach developed in Page, Quintana, Mueller (2020) is automatically employed.  Missing values must be denoted using "NA".  Currently, NAs cannot be accommodated if a ``global'' regression is desired (i.e., meanMode = 2).
 
-All continuous X's are standardized to have mean 0 and unit standard deviation before being passed to the PPMx partition model.  However, for meanModel = 2 the regression coefficients are estimated on the original scale and are ordered such that the continuous covariates appear first and the categorical covariates come after.
+We recommend standardizing covariates so thay they have mean zero and standard deviation one.  This makes the default values provided for the similarity function reasonable in most cases.  If covariates are standardized and meanModel = 2 the regression coefficients are estimated on the original scale and are ordered such that the continuous covariates appear first and the categorical covariates come after.
 
-The computational implementation of the model is based on algorithm 8 found in Neal 2000.
+The MCMC algorithm used to sample from the joint posterior distribution is based on algorithm 8 found in Neal 2000.
 }
 
 \value{
-The function returns a list containing arrays filled with MCMC iterates corresponding to model parameters and model fit metrics. In order to provide more detail, in what follows let
+The function returns a list containing arrays filled with MCMC iterates corresponding to model parameters and also returns a couple of model fit metrics. In order to provide more detail, in what follows let
 
 "T" - be the number of MCMC iterates collected,
 
@@ -172,13 +172,13 @@ The output list contains the following
 
 \item rbpred - a matrix of dimension (T, P) containing out of sample preditions at the latent variable level for each "new" subject at each MCMC iterate based on the rao-blackwellized prediction
 
-\item predclass_prob - a matrix of dimension (T, P*N) that contains the cluster allocation probabilities.  They are organized so that each row corresponds to an MCMC iterate.  Letting nclus represent the number of components at the t-th MCMC sample, the the first nclus columns of row t correspond to probabilities for new subject 1.  Then columns (N+1):(N+nclus) correspond to probabilities associated with new subject 2, etc.
+\item predclass_prob - a matrix of dimension (T, P*N) that contains the cluster allocation probabilities.  They are organized so that each row corresponds to an MCMC iterate.  Letting nclus represent the number of components at the t-th MCMC sample, the first nclus columns of row t correspond to probabilities for new subject 1.  Then columns (N+1):(N+nclus) correspond to probabilities associated with new subject 2, etc.
 
-\item ord.fitted.values - a matrix of dimension (T, N) containing fitted values on the ordinal variable scale for each subject at each MCMC iterate
+\item ord.fitted.values - a matrix of dimension (T, N) containing fitted values on the ordinal variable scale for each subject at each MCMC iterate.
 
-\item ord.ppred - a matrix of dimension (T, P) containing out of sample preditions on the ordinal variable scale for each ``new'' subject at each MCMC iterate
+\item ord.ppred - a matrix of dimension (T, P) containing out of sample preditions on the ordinal variable scale for each ``new'' subject at each MCMC iterate from the posterior predictive distribution.
 
-\item ord.rbpred - a matrix of dimension (T, P) containing out of sample preditions on the ordinal variable scale  for each "new" subject at each MCMC iterate based on the rao-blackwellized prediction
+\item ord.rbpred - a matrix of dimension (T, P) containing out of sample preditions on the ordinal variable scale  for each "new" subject at each MCMC iterate based on the rao-blackwellized prediction.
 
 }
 }

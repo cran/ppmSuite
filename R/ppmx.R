@@ -79,7 +79,7 @@ gaussian_ppmx <- function(y,X=NULL,Xpred=NULL,
         mn <- apply(Xall[,!catvars, drop=FALSE],2,mean, na.rm=TRUE)
         sd <- apply(Xall[,!catvars, drop=FALSE],2,sd, na.rm=TRUE)
         if(sum(round(mn + sd,10) == 1) != length(mn)){
-          message("Continuous covariates are not standardized.")
+          message("Note: It appears that continuous covariates are not standardized using both training and testing observations.")
         }
   	    Xconstd <- Xall[,!catvars, drop=FALSE]
   	    Xcon <- Xconstd[1:nobs,,drop=FALSE];
@@ -158,12 +158,12 @@ gaussian_ppmx <- function(y,X=NULL,Xpred=NULL,
 
 
   # Create empty vectors that will hold MCMC iterates
-  mu <- sig2 <- Si <- like <- ispred <- zi <- isordpred <- matrix(1,nrow=nout,ncol=nobs)
-  mu0 <- sig20 <- nclus <- rep(1,nout)
-  ppred <- predclass <-  rbpred <-  matrix(1, nrow=nout, ncol=npred)
-  predclass_prob <- matrix(1, nrow=nout, ncol=npred*nobs)
-  WAIC <- lpml <- rep(1,1)
-  beta <- matrix(0, nrow=nout, ncol=ncon+ncat)
+#  mu <- sig2 <- Si <- like <- ispred <- zi <- isordpred <- matrix(1,nrow=nout,ncol=nobs)
+#  mu0 <- sig20 <- nclus <- rep(1,nout)
+#  ppred <- predclass <-  rbpred <-  matrix(1, nrow=nout, ncol=npred)
+#  predclass_prob <- matrix(1, nrow=nout, ncol=npred*nobs)
+#  WAIC <- lpml <- rep(1,1)
+#  beta <- matrix(0, nrow=nout, ncol=ncon+ncat)
 
   if(nmissing > 0){
 

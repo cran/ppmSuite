@@ -921,7 +921,7 @@ static void ordinal_ppmx(
       } 
       
       
-      if((i > (*burn-1)) & (i % (*thin) == 0)){
+      if((i >= (*burn)) & ((i) % *thin ==0)){
         /////////////////////////////////////////////
         //
         // Compute the CPO and lpml using the mixture
@@ -1177,7 +1177,7 @@ static void ordinal_ppmx(
     // in sample prediction to assess model fit
     //
     ////////////////////////////////////////////////////////////////////////////////////////////
-    if((i > (*burn-1)) & (i % (*thin) == 0)){
+    if((i >= (*burn)) & ((i) % *thin ==0)){
       
       for(j = 0; j < *nobs; j++){
         
@@ -1206,7 +1206,7 @@ static void ordinal_ppmx(
     //
     ////////////////////////////////////////////////////////////////////////////////////////////
     
-    if((i > (*burn-1)) & (i % (*thin) == 0)){
+    if((i >= (*burn)) & ((i) % *thin ==0)){
     
       for(pp = 0; pp < *npred; pp++){
       
@@ -1591,7 +1591,7 @@ static void ordinal_ppmx(
     // Store MCMC iterates
     //
     //////////////////////////////////////////////////////////////////////////////////////
-    if((i > (*burn-1)) & ((i+1) % *thin ==0)){
+    if((i >= (*burn)) & ((i) % *thin ==0)){
 
       mu0[ii] = _mu0;
       sig20[ii] = _sig20;

@@ -1229,7 +1229,7 @@ void gaussian_ppmx_missing(
     // in sample prediction to assess model fit
     //
     ////////////////////////////////////////////////////////////////////////////////////////////
-    if((i > (*burn-1)) & (i % (*thin) == 0)){
+    if((i >= (*burn)) & ((i) % *thin ==0)){
 
       for(j = 0; j < *nobs; j++){
 
@@ -1285,7 +1285,7 @@ void gaussian_ppmx_missing(
     //
     ////////////////////////////////////////////////////////////////////////////////////////////
 
-    if((i > (*burn-1)) & (i % (*thin) == 0)){
+    if((i >= (*burn)) & ((i) % *thin ==0)){
       for(pp = 0; pp < *npred; pp++){
 
         for(k = 0; k < _nclus; k++){
@@ -1686,7 +1686,7 @@ void gaussian_ppmx_missing(
     // Store MCMC iterates
     //
     //////////////////////////////////////////////////////////////////////////////////////
-    if((i > (*burn-1)) & ((i+1) % *thin ==0)){
+    if((i >= (*burn)) & ((i) % *thin ==0)){
 
       mu0[ii] = _mu0;
       sig20[ii] = _sig20;
