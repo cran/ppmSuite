@@ -56,7 +56,7 @@ static void gaussian_ppmx(
                   double *mu0, double *sig20, double *beta,
                   double *like, double *waic, double *lpml,
                   double *ispred, double *ppred, int *predclass,
-                  double *rbpred, double *predclass_prob){ 
+                  double *rbpred){ 
 //                
 //                  double *ispred, int *isordpred, double *ppred, int *predclass, int *ordppred,
 //                  double *rbpred, int *rbordpred, double *predclass_prob){
@@ -198,7 +198,6 @@ static void gaussian_ppmx(
   double *_ppred = R_Vector((*npred));
   double *_rbpred = R_Vector((*npred));
   int _predclass[*npred];
-  double *_predclass_prob = R_VectorInit((*npred)*(*nobs+1), 0.0);
 
   
   // ===================================================================================
@@ -1535,7 +1534,6 @@ static void gaussian_ppmx(
         for(k = 0; k < _nclus; k++){
           if(*meanModel == 1) mn = mn +  _muh[k]*probh[k];
           if(*meanModel == 2) mn = mn +  (_muh[k] + xb)*probh[k];
-          _predclass_prob[pp*(*nobs) + k] = probh[k];
         }
         
         if(*meanModel == 1) mn = mn + rnorm(_mu0,sqrt(_sig20))*probh[_nclus];
@@ -1543,7 +1541,6 @@ static void gaussian_ppmx(
         
         _rbpred[pp] = mn;
 
-        _predclass_prob[pp*(*nobs) + _nclus] = probh[_nclus];        
     
         
       }
@@ -1581,9 +1578,6 @@ static void gaussian_ppmx(
         rbpred[ii + nout*pp] = _rbpred[pp];
         
 
-      }
-      for(pp = 0; pp < (*nobs)*(*npred); pp++){
-        predclass_prob[ii + nout*pp] = _predclass_prob[pp];
       }
       
       ii = ii + 1;
@@ -1672,14 +1666,13 @@ SEXP GAUSSIAN_PPMX(SEXP y, SEXP nobs, SEXP Xcon, SEXP Xcat, SEXP ncon,
   SEXP PPRED = PROTECT(allocMatrix(REALSXP, nout, _npred)); nprot++;
   SEXP RBPRED = PROTECT(allocMatrix(REALSXP, nout, _npred)); nprot++;
   SEXP PREDCLASS = PROTECT(allocMatrix(INTSXP, nout, _npred)); nprot++;
-  SEXP PREDCLASS_PROB = PROTECT(allocMatrix(REALSXP, nout, (_nobs)*(_npred))); nprot++;
  
   SEXP LIKE = PROTECT(allocMatrix(REALSXP, nout, _nobs)); nprot++;
   SEXP WAIC = PROTECT(Rf_allocVector(REALSXP, 1)); nprot++;
   SEXP LPML = PROTECT(Rf_allocVector(REALSXP, 1)); nprot++;
 
   double *MUout, *SIG2out, *MU0out, *SIG20out, *BETAout, *LIKEout, *WAICout, *LPMLout;
-  double *ISPREDout, *PPREDout, *RBPREDout, *PREDCLASS_PROBout;
+  double *ISPREDout, *PPREDout, *RBPREDout;
   int *Siout, *NCLUSout, *PREDCLASSout;
   
   MUout = REAL(MU);
@@ -1697,7 +1690,6 @@ SEXP GAUSSIAN_PPMX(SEXP y, SEXP nobs, SEXP Xcon, SEXP Xcat, SEXP ncon,
   ISPREDout = REAL(ISPRED);
   PPREDout = REAL(PPRED);
   RBPREDout = REAL(RBPRED);
-  PREDCLASS_PROBout = REAL(PREDCLASS_PROB);
   PREDCLASSout = INTEGER(PREDCLASS);
 
 
@@ -1711,12 +1703,12 @@ SEXP GAUSSIAN_PPMX(SEXP y, SEXP nobs, SEXP Xcon, SEXP Xcat, SEXP ncon,
                      &_niter, &_nburn, &_nthin, 
                      Siout, NCLUSout, MUout, SIG2out, MU0out, SIG20out, BETAout,
                      LIKEout, WAICout, LPMLout, ISPREDout, PPREDout, PREDCLASSout,
-                     RBPREDout, PREDCLASS_PROBout);
+                     RBPREDout);
 
   PutRNGstate();
 
 
-  SEXP ans = PROTECT(allocVector(VECSXP, 15)); nprot++;
+  SEXP ans = PROTECT(allocVector(VECSXP, 14)); nprot++;
   SET_VECTOR_ELT(ans, 0, MU);
   SET_VECTOR_ELT(ans, 1, SIG2);
   SET_VECTOR_ELT(ans, 2, BETA);
@@ -1731,10 +1723,9 @@ SEXP GAUSSIAN_PPMX(SEXP y, SEXP nobs, SEXP Xcon, SEXP Xcat, SEXP ncon,
   SET_VECTOR_ELT(ans, 11, PPRED);
   SET_VECTOR_ELT(ans, 12, PREDCLASS);
   SET_VECTOR_ELT(ans, 13, RBPRED);
-  SET_VECTOR_ELT(ans, 14, PREDCLASS_PROB);
 
 
-  SEXP nm = allocVector(STRSXP, 15);
+  SEXP nm = allocVector(STRSXP, 14);
   setAttrib(ans, R_NamesSymbol, nm);
   SET_STRING_ELT(nm, 0, mkChar("mu"));
   SET_STRING_ELT(nm, 1, mkChar("sig2"));
@@ -1750,7 +1741,6 @@ SEXP GAUSSIAN_PPMX(SEXP y, SEXP nobs, SEXP Xcon, SEXP Xcat, SEXP ncon,
   SET_STRING_ELT(nm, 11, mkChar("ppred"));
   SET_STRING_ELT(nm, 12, mkChar("predclass"));
   SET_STRING_ELT(nm, 13, mkChar("rbpred"));
-  SET_STRING_ELT(nm, 14, mkChar("predclass_prob"));
 
   UNPROTECT(nprot);
   return(ans);

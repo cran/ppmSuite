@@ -11,8 +11,12 @@ point model, where the set of change point indicators between time series are co
 }
 
 \usage{
-ccp_ppm(ydata, nu0, mu0, sigma0, mltypes, thetas, devs, nburn, nskip, nsave,
-        verbose = FALSE)
+ccp_ppm(ydata,
+         nu0, mu0, sigma0,
+         mltypes, thetas,
+         devs,
+         nburn, nskip, nsave,
+         verbose = FALSE)
 }
 
 \arguments{
@@ -31,7 +35,7 @@ section Details).}
 \itemize{
 
     \item{\code{mltypes = 1}.} Observations within a block are conditionally
-    independent \eqn{Normal(\mu, \sigma^2)} variates with mean \eqn{mu} and
+    independent \eqn{Normal(\mu, \sigma^2)} variates with mean \eqn{\mu} and
     variance \eqn{\sigma^2}. The desired marginal likelihood is obtained after
     integrating \eqn{(\mu, \sigma^2)} with respect to a
     \eqn{Normal-Inverse-Gamma(\mu_{0}, \kappa_{0}, \alpha_{0}, \beta_{0})}
@@ -99,13 +103,13 @@ follows let \eqn{M} be the number of MCMC iterates collected. The output list
 contains the following:
 \itemize{
 
-  \item{C.} An \eqn{M \times \{L * (n - 1)\}} matrix containing MCMC iterates
+  \item{C.} An \eqn{M \times \{L(n - 1)\}} matrix containing MCMC iterates
   associated with each series indicators of a change point. The \eqn{m}th
   row in \code{C} is divided into \eqn{L} blocks; the first \eqn{(n - 1)}
   change point indicators for time series 1, the next \eqn{(n - 1)} change
   point indicators for time series 2, and so on.
 
-  \item{P.} An \eqn{M \times \{L * (n - 1)\}} matrix containing MCMC iterates
+  \item{P.} An \eqn{M \times \{L(n - 1)\}} matrix containing MCMC iterates
   associated with each series probability of a change point. The \eqn{m}th
   row in \code{P} is divided into \eqn{L} blocks; the first \eqn{(n - 1)}
   change point probabilities for time series 1, the next \eqn{(n - 1)} change

@@ -19,35 +19,35 @@ icp_ppm(ydata,
          verbose = FALSE)
 }
 \arguments{
-\item{ydata}{An \eqn{ascii}{L \times n} data matrix, where \eqn{L} is the number of
-time series and \eqn{n}, the number of time points.}
+\item{ydata}{An \eqn{L \times n}{L x n} data matrix, where \eqn{L}{L} is the number of
+time series and \eqn{n}{n}, the number of time points.}
 
-\item{a0}{Vector of dimension \eqn{L} with shape 1 Beta parameters (see section
+\item{a0}{Vector of dimension \eqn{L}{L} with shape 1 Beta parameters (see
 Details).}
 
-\item{b0}{Vector of dimension \eqn{L} with shape 2 Beta parameters (see section
+\item{b0}{Vector of dimension \eqn{L}{L} with shape 2 Beta parameters (see
 Details).}
 
 \item{mltypes}{Type of marginal likelihood. Currently only available is:
 \itemize{
 
     \item{\code{mltypes = 1}.} Observations within a block are conditionally
-    independent \eqn{Normal(\mu, \sigma^2)} variates with mean \eqn{mu} and
+    independent \eqn{Normal(\mu, \sigma^2)} variates with mean \eqn{\mu} and
     variance \eqn{\sigma^2}. The desired marginal likelihood is obtained after
     integrating \eqn{(\mu, \sigma^2)} with respect to a
-    \eqn{Normal-Inverse-Gamma(\mu_{0}, \kappa_{0}, \alpha_{0}, \beta_{0})}
+    \eqn{Normal-Inverse-Gamma(\mu_0, \kappa_0, \alpha_0, \beta_0)}{Normal-Inverse-Gamma(\mu0, \kappa0, \alpha0, \beta0)}
     prior.
     }
 }
 
-\item{thetas}{An \eqn{L \times q} matrix containing hyperparameters associated
-with the marginal likelihood. The number of rows \eqn{(L)} corresponds to the
-number of series. The number of columns \eqn{(q)} depend on the marginal
+\item{thetas}{An \eqn{L \times q}{L x q} matrix containing hyperparameters associated
+with the marginal likelihood. The number of rows \eqn{(L)}{(L)} corresponds to the
+number of series. The number of columns \eqn{(q)}{(q)} depend on the marginal
 likelihood:
   \itemize{
 
     \item  If \code{mltypes = 1}, then \eqn{q = 4} and \code{thetas} equals
-    the hyperparameter \eqn{(\mu_{0}, \kappa_{0}, \alpha_{0}, \beta_{0})} of
+    the hyperparameter \eqn{(\mu_{0}, \kappa_{0}, \alpha_{0}, \beta_{0})}{(\mu0, \kappa0, \alpha0, \beta0)} of
     the Normal-Inverse-Gamma prior.
   }
 }
@@ -63,9 +63,11 @@ progression. The default value is \code{verbose = FALSE}.}
 
 }
 
+
 \details{
-As described in Loschi (add cite), for each time series
-\eqn{\boldsymbol{y}_{i} = (y_{i,1}, \ldots , y_{i,n})'}:
+As described in Barry and Hartigan (1992) and Loschi and Cruz (2002), for each
+time series
+\eqn{\boldsymbol{y}_{i} = (y_{i,1}, \ldots , y_{i,n})'}{yi = (yi1, ..., yi1n)'}:
 
 \deqn{\boldsymbol{y}_{i} \mid \rho_{i} \sim
 \prod_{j = 1}^{b_{i}}\mathcal{F}(\boldsymbol{y}_{i,j} \mid
@@ -92,16 +94,16 @@ follows let \eqn{M} be the number of MCMC iterates collected. The output list
 contains the following:
 \itemize{
 
-  \item{C.} An \eqn{M \times \{L * (n - 1)\}} matrix containing MCMC iterates
+  \item{C.} An \eqn{M \times \{L(n - 1)\}}{M x L(n-1)} matrix containing MCMC iterates
   associated with each series indicators of a change point. The \eqn{m}th
   row in \code{C} is divided into \eqn{L} blocks; the first \eqn{(n - 1)}
   change point indicators for time series 1, the next \eqn{(n - 1)} change
   point indicators for time series 2, and so on.
 
-  \item{P.} An \eqn{M \times \{L * (n - 1)\}} matrix containing MCMC iterates
+  \item{P.} An \eqn{M \times \{L(n - 1)\}}{M x L(n-1)} matrix containing MCMC iterates
   associated with each series probability of a change point. The \eqn{m}th
   row in \code{P} is divided into \eqn{L} blocks; the first \eqn{(n - 1)}
-  change point probabilities for time series 1, the next \eqn{ascii}{(n - 1)} change
+  change point probabilities for time series 1, the next \eqn{(n - 1)} change
   point probabilities for time series 2, and so on.
   }
 }

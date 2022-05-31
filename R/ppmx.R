@@ -157,13 +157,6 @@ gaussian_ppmx <- function(y,X=NULL,Xpred=NULL,
   }
 
 
-  # Create empty vectors that will hold MCMC iterates
-#  mu <- sig2 <- Si <- like <- ispred <- zi <- isordpred <- matrix(1,nrow=nout,ncol=nobs)
-#  mu0 <- sig20 <- nclus <- rep(1,nout)
-#  ppred <- predclass <-  rbpred <-  matrix(1, nrow=nout, ncol=npred)
-#  predclass_prob <- matrix(1, nrow=nout, ncol=npred*nobs)
-#  WAIC <- lpml <- rep(1,1)
-#  beta <- matrix(0, nrow=nout, ncol=ncon+ncat)
 
   if(nmissing > 0){
 
@@ -202,7 +195,6 @@ gaussian_ppmx <- function(y,X=NULL,Xpred=NULL,
   }
   if(meanModel == 2) colnames(run$beta) <- c(cnames[!catvars], cnames[catvars])
   if(meanModel == 1) run <- run[-3]
-  if(length(y)*nout > 1e+05) run$predclass_prob <- NULL;
   out <- run
 
   if(nmissing > 0) out$Missmat <- Mall

@@ -96,8 +96,7 @@ void ordinal_ppmx_missing(
           double *mu0, double *sig20,
           double *like, double *waic, double *lpml,
           double *ispred, int *isordpred, double *ppred, int *ordppred, int *predclass,
-          double *rbpred, int *rbordpred,
-          double *predclass_prob){
+          double *rbpred, int *rbordpred){
 
 
 
@@ -230,7 +229,6 @@ void ordinal_ppmx_missing(
   int _ordppred[*npred];
   int _rbordpred[*npred];
   int _predclass[*npred];
-  double *_predclass_prob = R_VectorInit((*npred)*(*nobs+1), 0.0);
 
   // ===================================================================================
   //
@@ -1558,7 +1556,6 @@ void ordinal_ppmx_missing(
         for(k = 0; k < _nclus; k++){
           if(*meanModel == 1) mn = mn +  _muh[k]*probh[k];
           if(*meanModel == 2) mn = mn +  (_muh[k] + xb)*probh[k];
-          _predclass_prob[pp*(*nobs) + k] = probh[k];
         }
         
         if(*meanModel == 1) mn = mn + rnorm(_mu0,sqrt(_sig20))*probh[_nclus];
@@ -1566,7 +1563,6 @@ void ordinal_ppmx_missing(
         
         _rbpred[pp] = mn;
 
-        _predclass_prob[pp*(*nobs) + _nclus] = probh[_nclus];        
 
         // convert the auxiliary variable to the ordinal scale
         for(c=0; c < *nordcat-1; c++){
@@ -1614,9 +1610,6 @@ void ordinal_ppmx_missing(
         rbpred[ii + nout*pp] = _rbpred[pp];
         rbordpred[ii + nout*pp] = _rbordpred[pp];
 
-      }
-      for(pp = 0; pp < (*nobs)*(*npred); pp++){
-        predclass_prob[ii + nout*pp] = _predclass_prob[pp];
       }
       
       ii = ii + 1;
@@ -1718,14 +1711,13 @@ SEXP ORDINAL_PPMX_MISSING(SEXP y, SEXP co, SEXP nobs, SEXP nordcat,
   SEXP RBPRED = PROTECT(allocMatrix(REALSXP, nout, _npred)); nprot++;
   SEXP ORDRBPRED = PROTECT(allocMatrix(INTSXP, nout, _npred)); nprot++;
   SEXP PREDCLASS = PROTECT(allocMatrix(INTSXP, nout, _npred)); nprot++;
-  SEXP PREDCLASS_PROB = PROTECT(allocMatrix(REALSXP, nout, (_nobs)*(_npred))); nprot++;
  
   SEXP LIKE = PROTECT(allocMatrix(REALSXP, nout, _nobs)); nprot++;
   SEXP WAIC = PROTECT(Rf_allocVector(REALSXP, 1)); nprot++;
   SEXP LPML = PROTECT(Rf_allocVector(REALSXP, 1)); nprot++;
 
   double *MUout, *SIG2out, *MU0out, *SIG20out, *BETAout, *Ziout, *LIKEout, *WAICout, *LPMLout;
-  double *ISPREDout, *PPREDout, *RBPREDout, *PREDCLASS_PROBout;
+  double *ISPREDout, *PPREDout, *RBPREDout;
   int *Siout, *NCLUSout, *PREDCLASSout, *ISORDPREDout, *ORDPPREDout, *ORDRBPREDout;  
   
   MUout = REAL(MU);
@@ -1747,7 +1739,6 @@ SEXP ORDINAL_PPMX_MISSING(SEXP y, SEXP co, SEXP nobs, SEXP nordcat,
   ISORDPREDout = INTEGER(ISORDPRED);
   ORDPPREDout = INTEGER(ORDPPRED);
   ORDRBPREDout = INTEGER(ORDRBPRED);
-  PREDCLASS_PROBout = REAL(PREDCLASS_PROB);
   PREDCLASSout = INTEGER(PREDCLASS);
 
 
@@ -1768,14 +1759,13 @@ SEXP ORDINAL_PPMX_MISSING(SEXP y, SEXP co, SEXP nobs, SEXP nordcat,
                 MU0out, SIG20out, 
                 LIKEout, WAICout, LPMLout, 
                 ISPREDout, ISORDPREDout, PPREDout, ORDPPREDout, PREDCLASSout,
-                RBPREDout, ORDRBPREDout,
-                PREDCLASS_PROBout);
+                RBPREDout, ORDRBPREDout);
 
   PutRNGstate();
 
 
 
-  SEXP ans = PROTECT(allocVector(VECSXP, 19)); nprot++;
+  SEXP ans = PROTECT(allocVector(VECSXP, 18)); nprot++;
   SET_VECTOR_ELT(ans, 0, MU);
   SET_VECTOR_ELT(ans, 1, SIG2);
   SET_VECTOR_ELT(ans, 2, BETA);
@@ -1791,13 +1781,12 @@ SEXP ORDINAL_PPMX_MISSING(SEXP y, SEXP co, SEXP nobs, SEXP nordcat,
   SET_VECTOR_ELT(ans, 12, PPRED);
   SET_VECTOR_ELT(ans, 13, PREDCLASS);
   SET_VECTOR_ELT(ans, 14, RBPRED);
-  SET_VECTOR_ELT(ans, 15, PREDCLASS_PROB);
-  SET_VECTOR_ELT(ans, 16, ISORDPRED);
-  SET_VECTOR_ELT(ans, 17, ORDPPRED);
-  SET_VECTOR_ELT(ans, 18, ORDRBPRED);
+  SET_VECTOR_ELT(ans, 15, ISORDPRED);
+  SET_VECTOR_ELT(ans, 16, ORDPPRED);
+  SET_VECTOR_ELT(ans, 17, ORDRBPRED);
 
 
-  SEXP nm = allocVector(STRSXP, 19);
+  SEXP nm = allocVector(STRSXP, 18);
   setAttrib(ans, R_NamesSymbol, nm);
   SET_STRING_ELT(nm, 0, mkChar("mu"));
   SET_STRING_ELT(nm, 1, mkChar("sig2"));
@@ -1814,10 +1803,9 @@ SEXP ORDINAL_PPMX_MISSING(SEXP y, SEXP co, SEXP nobs, SEXP nordcat,
   SET_STRING_ELT(nm, 12, mkChar("ppred"));
   SET_STRING_ELT(nm, 13, mkChar("predclass"));
   SET_STRING_ELT(nm, 14, mkChar("rbpred"));
-  SET_STRING_ELT(nm, 15, mkChar("predclass_prob"));
-  SET_STRING_ELT(nm, 16, mkChar("ord.fitted.values"));
-  SET_STRING_ELT(nm, 17, mkChar("ord.ppred"));
-  SET_STRING_ELT(nm, 18, mkChar("ord.rbpred"));
+  SET_STRING_ELT(nm, 15, mkChar("ord.fitted.values"));
+  SET_STRING_ELT(nm, 16, mkChar("ord.ppred"));
+  SET_STRING_ELT(nm, 17, mkChar("ord.rbpred"));
 
   UNPROTECT(nprot);
   return(ans);

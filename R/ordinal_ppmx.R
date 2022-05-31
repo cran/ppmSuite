@@ -78,7 +78,7 @@ ordinal_ppmx  <- function(y, co, X=NULL,Xpred=NULL,
   nmissing <- 0
   npred <- 0
 
-  # If at least on of X and or Xpred are not NULL
+  # If at least one of X and or Xpred are not NULL
   if(!(is.null(X) & is.null(Xpred))){
     nxobs <- ifelse(is.null(X), 0, nrow(X))
     npred <- ifelse(is.null(Xpred), 0, nrow(Xpred))
@@ -102,9 +102,9 @@ ordinal_ppmx  <- function(y, co, X=NULL,Xpred=NULL,
         mn <- apply(Xall[,!catvars, drop=FALSE],2,mean, na.rm=TRUE)
         sd <- apply(Xall[,!catvars, drop=FALSE],2,sd, na.rm=TRUE)
         if(sum(round(mn + sd,10) == 1) != length(mn)){
-          message("Continuous covariates are not standardized.")
+          message("Note: It appears that continuous covariates are not standardized using both training and testing observations.")
         }
-  	    Xconstd <- apply(Xall[,!catvars, drop=FALSE], 2, scale)
+  	    Xconstd <- Xall[,!catvars, drop=FALSE]
   	    Xcon <- Xconstd[1:nobs,,drop=FALSE];
   	    ncon <- ncol(Xcon)
   	    if(nmissing > 0) Mcon <- Mall[1:nobs, !catvars, drop=FALSE]
@@ -135,7 +135,7 @@ ordinal_ppmx  <- function(y, co, X=NULL,Xpred=NULL,
     # Now consider the case when number of covariates for prediction are greater than zero
     if(npred > 0){
   	  if(sum(!catvars) > 0){
-  	    Xconstd <- apply(Xall[,!catvars, drop=FALSE], 2, scale)
+  	    Xconstd <- Xall[,!catvars, drop=FALSE]
   	    Xconp <- Xconstd[(nrow(Xall)-npred+1):nrow(Xall),,drop=FALSE];
   	    if(nmissing > 0) Mconp <- Mall[(nrow(Xall)-npred+1):nrow(Xall), !catvars, drop=FALSE]
   	    ncon <- ncol(Xconp)
@@ -178,13 +178,6 @@ ordinal_ppmx  <- function(y, co, X=NULL,Xpred=NULL,
     dissimtt <- 0
   }
 
-  # Create empty vectors that will hold MCMC iterates
-  mu <- sig2 <- Si <- like <- ispred <- zi <- isordpred <- matrix(1,nrow=nout,ncol=nobs)
-  mu0 <- sig20 <- nclus <- rep(1,nout)
-  ppred <- predclass <- ordppred <- rbpred <- rbordpred <- matrix(1, nrow=nout, ncol=npred)
-  predclass_prob <- matrix(1, nrow=nout, ncol=npred*nobs)
-  WAIC <- lpml <- rep(1,1)
-  beta <- matrix(0, nrow=nout, ncol=ncon+ncat)
 
   nordcat <- length(co)
 
