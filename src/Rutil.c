@@ -850,6 +850,7 @@ double gsimconMVN_MVN(double *Vinv, double *m0, double *V0inv, double ldV, doubl
 
 // The double dipper is included as an argument.
 
+//      	        lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nh[k], 0, 0, 1);
 
 double gsimconNNIG(double m0, double k0, double nu0, double s20, double sumx, double sumx2,
 				   double mnmle, double s2mle, int n, int DD, int cal, int logout){
@@ -858,10 +859,12 @@ double gsimconNNIG(double m0, double k0, double nu0, double s20, double sumx, do
 //	Rprintf("sumx2 = %f\n", sumx2);
 //	Rprintf("n = %d\n", n);
 
+
 	double a0, b0, m0s, m0ss, k0s, k0ss, a0s, a0ss, b0s, b0ss;
 	double ld1, ld2, ld3, ld4, ld5, ld6, out;
 	double mu=10, v2=0.1;
-	double xbar = sumx*(1/ (double) n);
+	double xbar = 0.0;
+	if(n > 0) xbar = sumx*(1/ (double) n);
 
 	a0 = 0.5*nu0;
 	b0 = 0.5*nu0*s20;
@@ -886,8 +889,6 @@ double gsimconNNIG(double m0, double k0, double nu0, double s20, double sumx, do
 	ld6 = dN_IG(mnmle, s2mle, m0s, k0s, a0s, b0s, 1);
 
 	out = ld1 + ld2 - ld3;
-
-
 
 	if(DD==1) out = ld1 + ld3 - ld4;
 	if(cal==1) out = ld5 - ld6;

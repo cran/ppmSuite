@@ -506,6 +506,7 @@ static void gaussian_ppmx(
       // Begin the cluster probabilities
       
       for(k=0; k<_nclus; k++){
+
         lgconY = 0.0;
       	lgconN = 0.0;
       	lgcatY = 0.0;
@@ -515,7 +516,7 @@ static void gaussian_ppmx(
           
       	  // start by calculating similarity for continuous covariates
       	  for(p=0; p<(*ncon); p++){
-            
+
             sumxtmp = sumx[k*(*ncon) + p];
             sumx2tmp = sumx2[k*(*ncon) + p];
 
@@ -531,11 +532,11 @@ static void gaussian_ppmx(
           
       	    }
       	    if(*similarity_function==2){ //Double Dipper
-      	      if(*consim==1){
+      	      if(*consim==1){// NN
       	        lgcont = gsimconNN(m0, v, s20, sumxtmp, sumx2tmp, mnmle[p], nh[k], 1, 0, 1);
       	        lgconN = lgconN + lgcont;
       	      }
-      	      if(*consim==2){
+      	      if(*consim==2){// NNIG
       	        lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nh[k], 1, 0, 1);
       	        lgconN = lgconN + lgcont;
       	      }
@@ -683,6 +684,13 @@ static void gaussian_ppmx(
       	// Compute the unnormalized cluster probabilities
       	// Note that if PPMx = FALSE then 
       	// lgcatY = lgcatN = lgconY = lgconN = 0;
+//      	Rprintf("y[j] = %f\n", y[j]);
+//      	Rprintf("mn = %f\n", mn);
+//      	Rprintf("sqrt(_sig2h[k]) = %f\n", sqrt(_sig2h[k]));
+//      	Rprintf("dnorm(y[j], mn, sqrt(_sig2h[k]), 1) = %f\n", dnorm(y[j], mn, sqrt(_sig2h[k]), 1));
+//      	Rprintf("lgconY = %f\n", lgconY);
+//      	Rprintf("lgconN = %f\n", lgconN);
+//      	Rprintf("nh[k] = %d\n", nh[k]);
       	ph[k] = dnorm(y[j], mn, sqrt(_sig2h[k]), 1) +
       		    	log((double) nh[k]) + // cohesion part
       		        lgcatY - lgcatN + // Categorical part only nonzero if PPMx=TRUE
@@ -779,6 +787,12 @@ static void gaussian_ppmx(
       // Note that if PPMx = FALSE, then 
       // lgcondraw = lgcondraw =  0;
       
+//      Rprintf("y[j] = %f\n", y[j]);
+//      Rprintf("mn = %f\n", mn);
+//      Rprintf("sdraw = %f\n", sdraw);
+//      Rprintf("dnorm(y[j],mn,sdraw,1) = %f\n", dnorm(y[j],mn,sdraw,1));
+//      Rprintf("lgcondraw = %f\n", lgcondraw);
+//      Rprintf("Mdp = %d\n", Mdp);
       
       ph[_nclus] = dnorm(y[j],mn,sdraw,1) +
                        	log(Mdp) +
@@ -861,7 +875,7 @@ static void gaussian_ppmx(
       // End of calibration used when the similarity is normalized
       /////////////////////////////////////////////////////////////////////////////
       
-      
+//      RprintVecAsMat("ph", ph, 1, _nclus+1);
       maxph = ph[0];
       for(k = 1; k < _nclus+1; k++){
       	if(maxph < ph[k]) maxph = ph[k];
@@ -872,11 +886,12 @@ static void gaussian_ppmx(
       	ph[k] = exp(ph[k] - maxph);
       	denph = denph + ph[k];
       }
-      
+
       for(k = 0; k < _nclus+1; k++){
       	probh[k] = ph[k]/denph;
       }
       
+//      RprintVecAsMat("probh", probh, 1, _nclus+1);
       uu = runif(0.0,1.0);
       
       cprobh= 0.0;
@@ -889,6 +904,7 @@ static void gaussian_ppmx(
       	}
       }
       
+//      Rprintf("iaux = %d\n", iaux);
       
       if(iaux <= _nclus){
       
@@ -921,6 +937,9 @@ static void gaussian_ppmx(
         }
       } 
 
+//      RprintIVecAsMat("Si", _Si, 1, *nobs);
+//      RprintIVecAsMat("nh", nh, 1, _nclus);
+//      Rprintf("nclus = %d\n", _nclus);
     }
     
 
@@ -1182,19 +1201,19 @@ static void gaussian_ppmx(
       	  lgcatY=0.0, lgcatN=0.0;
         
       	  if(!(*PPM)){
-      	  	
+
       	    for(p=0; p<(*ncon); p++){
               sumxtmp = sumx[k*(*ncon) + p];
               sumx2tmp = sumx2[k*(*ncon) + p];
           
-          
+        
       	  	  if(*similarity_function==1){
       	  	    if(*consim==1){
       	  	      lgcont = gsimconNN(m0, v, s20, sumxtmp, sumx2tmp, mnmle[p], nh[k], 0, 0, 1);
       	  	      lgconN = lgconN + lgcont;
       	  	  	}
       	  	  	if(*consim==2){
-      	  	      lgcont = gsimconNNIG(m0, k0, nu0, s20, sumx2tmp, sumx2[k], mnmle[p], s2mle[p], nh[k], 0, 0, 1);
+      	  	      lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nh[k], 0, 0, 1);
       	  	      lgconN = lgconN + lgcont;
       	  	  	}
       	  	  }
@@ -1480,7 +1499,7 @@ static void gaussian_ppmx(
       	// End of calibration used when the similarity is standardized by
       	//////////////////////////////////////////////////////////////////////////
               
-              
+//        RprintVecAsMat("ph = ", ph, 1, _nclus+1);      
         maxph = ph[0];
         for(k = 1; k < _nclus+1; k++){
           if(ph[k] > maxph) maxph=ph[k];
@@ -1507,7 +1526,9 @@ static void gaussian_ppmx(
             break;
           }
         }
-//        Rprintf("cprobh = %f\n", cprobh);       
+//        Rprintf("cprobh = %f\n", cprobh);   
+//        Rprintf("_nclus = %d\n", _nclus);    
+//        Rprintf("iaux = %d\n", iaux);    
         if(iaux <= _nclus){
           mudraw = _muh[(iaux-1)];
           sdraw = sqrt(_sig2h[(iaux-1)]);
@@ -1515,8 +1536,11 @@ static void gaussian_ppmx(
           mudraw = rnorm(_mu0,sqrt(_sig20));
           sdraw = runif(smin, smax);
         }
+//        Rprintf("mudraw = %f\n", mudraw);
+//        Rprintf("sdraw = %f\n", sdraw);
         
         mn = mudraw;
+//        Rprintf("mn = %f\n", mn);
         if(*meanModel==2){
           xb = 0.0;
           for(b = 0; b < ncov; b++){
@@ -1524,9 +1548,11 @@ static void gaussian_ppmx(
           }
           mn = mudraw + xb;
         }
+//        Rprintf("mn = %f\n", mn);
         _ppred[pp] = rnorm(mn, sdraw);
         _predclass[pp] = iaux;
 //        Rprintf("iaux = %d\n", iaux);
+//        Rprintf("_ppred[pp] = %f\n", _ppred[pp]);
 //        Rprintf("_predclass[pp] = %d\n", _predclass[pp]);
 //        Rprintf("mn = %f\n", mn);
 //        RprintVecAsMat("_muh", _muh, 1, _nclus);
@@ -1535,10 +1561,11 @@ static void gaussian_ppmx(
           if(*meanModel == 1) mn = mn +  _muh[k]*probh[k];
           if(*meanModel == 2) mn = mn +  (_muh[k] + xb)*probh[k];
         }
+//        Rprintf("mn = %f\n", mn);
         
         if(*meanModel == 1) mn = mn + rnorm(_mu0,sqrt(_sig20))*probh[_nclus];
         if(*meanModel == 2) mn = mn + rnorm(_mu0+xb,sqrt(_sig20))*probh[_nclus];
-        
+//        Rprintf("mn = %f\n", mn);
         _rbpred[pp] = mn;
 
     

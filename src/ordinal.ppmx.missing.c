@@ -1207,7 +1207,7 @@ void ordinal_ppmx_missing(
       	  	      lgconN = lgconN + lgcont;
       	  	  	}
       	  	  	if(*consim==2){
-      	  	      lgcont = gsimconNNIG(m0, k0, nu0, s20, sumx2tmp, sumx2[k], mnmle[p], s2mle[p], nhxtmp, 0, 0, 1);
+      	  	      lgcont = gsimconNNIG(m0, k0, nu0, s20, sumx2tmp, sumx2tmp, mnmle[p], s2mle[p], nhxtmp, 0, 0, 1);
       	  	      lgconN = lgconN + lgcont;
       	  	  	}
       	  	  }

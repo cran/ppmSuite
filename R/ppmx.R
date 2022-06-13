@@ -163,7 +163,7 @@ gaussian_ppmx <- function(y,X=NULL,Xpred=NULL,
     Xcon[is.na(Xcon)] <- 999;Xconp[is.na(Xconp)] <- 999;
     Xcat[is.na(Xcat)] <- 999;Xcatp[is.na(Xcatp)] <- 999;
 
-    message("There are a total of ", nmissing, " missing covariate values. \n They will be accommodated using extentions to the ppmx model detailed in Page et. al (2020)")
+    message("Note: There are a total of ", nmissing, " missing covariate values. They will be accommodated using extensions to the ppmx model detailed in Page et. al (2022)")
 
     run <- .Call("GAUSSIAN_PPMX_MISSING",
               as.double(y), as.integer(nobs),

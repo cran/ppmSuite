@@ -388,8 +388,7 @@ void gaussian_ppmx_missing(
 
 
   for(i = 0; i < *draws; i++){
-
-//    if(*verbose & ((i+1) % 1000 == 0)){
+//    Rprintf("i = %d\n", i);
     if(*verbose){
 //	      time_t now;
 //	      time(&now);
@@ -564,6 +563,9 @@ void gaussian_ppmx_missing(
           }
         }
       }
+      
+//      RprintVecAsMat("sumx = ", sumx, _nclus, *ncon);
+//      RprintVecAsMat("sumx2 = ", sumx2, _nclus, *ncon);
 
       // Begin the cluster probabilities
 
@@ -572,12 +574,12 @@ void gaussian_ppmx_missing(
       	lgconN = 0.0;
       	lgcatY = 0.0;
       	lgcatN = 0.0;
-
+//        Rprintf("k = %d\n", k);
       	if(!(*PPM)){
 
       	  // start by calculating similarity for continuous covariates
       	  for(p=0; p<(*ncon); p++){
-
+//            Rprintf("p = %d\n", p);
             sumxtmp = sumx[k*(*ncon) + p];
             sumx2tmp = sumx2[k*(*ncon) + p];
             nhxtmp = nhx[k*(*ncon) + p];
@@ -622,7 +624,7 @@ void gaussian_ppmx_missing(
       	        lgcont = gsimconNN(m0, v, s20, sumxtmp, sumx2tmp, mnmle[p], nhxtmp, 0, 0, 1);
       	        lgconY = lgconY + lgcont;
       	      }
-      	      if(*consim==2){
+      	      if(*consim==2){      	        
       	        lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nhxtmp, 0, 0, 1);
       	        lgconY = lgconY + lgcont;
       	      }
@@ -643,7 +645,8 @@ void gaussian_ppmx_missing(
       	    }
 
       	  }
-
+//          Rprintf("lgconN = %f\n", lgconN);
+//          Rprintf("lgconY = %f\n", lgconY);
 
       	  // Now calculate similarity for the categorical covariates
       	  for(p=0; p<(*ncat); p++){
@@ -963,7 +966,6 @@ void gaussian_ppmx_missing(
       	probh[k] = ph[k]/denph;
       }
 
-
       uu = runif(0.0,1.0);
 
       cprobh= 0.0;
@@ -1009,7 +1011,6 @@ void gaussian_ppmx_missing(
           }
         }
       }
-
     }
 
 
@@ -1286,15 +1287,16 @@ void gaussian_ppmx_missing(
 
     if((i >= (*burn)) & ((i) % *thin ==0)){
       for(pp = 0; pp < *npred; pp++){
-
+//        Rprintf("pp=%d\n", pp);
         for(k = 0; k < _nclus; k++){
-
+//          Rprintf("k =================== %d\n", k);
       	  lgconN=0.0, lgconY=0.0;
       	  lgcatN=0.0, lgcatY=0.0;
 
       	  if(!(*PPM)){
 
       	    for(p=0; p<(*ncon); p++){
+//      	      Rprintf("p ==================== %d\n", p);
               sumxtmp = sumx[k*(*ncon) + p];
               sumx2tmp = sumx2[k*(*ncon) + p];
               nhxtmp = nhx[k*(*ncon) + p];
@@ -1305,7 +1307,15 @@ void gaussian_ppmx_missing(
       	  	      lgconN = lgconN + lgcont;
       	  	  	}
       	  	  	if(*consim==2){
-      	  	      lgcont = gsimconNNIG(m0, k0, nu0, s20, sumx2tmp, sumx2[k], mnmle[p], s2mle[p], nhxtmp, 0, 0, 1);
+//      	          Rprintf("m0 = %f\n", m0);
+//      	          Rprintf("k0 = %f\n", k0);
+//      	          Rprintf("nu0 = %f\n", nu0);
+//      	          Rprintf("s20 = %f\n", s20);
+//      	          Rprintf("nhxtmp = %d\n", nhxtmp);
+//      	          Rprintf("sumxtmp = %f\n", sumxtmp);
+//      	          Rprintf("sumx2tmp = %f\n", sumx2tmp);
+      	  	      lgcont = gsimconNNIG(m0, k0, nu0, s20, sumx2tmp, sumx2tmp, mnmle[p], s2mle[p], nhxtmp, 0, 0, 1);
+//                  Rprintf("lgcont =%f\n", lgcont);      	        
       	  	      lgconN = lgconN + lgcont;
       	  	  	}
       	  	  }
@@ -1333,11 +1343,16 @@ void gaussian_ppmx_missing(
 
       	  	  if(*similarity_function==1){ // Auxilliary
       	  	  	if(*consim==1){
-      	  	      lgcont = gsimconNN(m0, v, s20, sumxtmp, sumx2tmp, mnmle[p], nhxtmp, 0, 0, 1);
+     	  	      lgcont = gsimconNN(m0, v, s20, sumxtmp, sumx2tmp, mnmle[p], nhxtmp, 0, 0, 1);
       	  	      lgconY = lgconY + lgcont;
       	  	  	}
       	  	  	if(*consim==2){
+//       	          Rprintf("Xconp[pp*(*ncon)+p] = %f\n", Xconp[pp*(*ncon)+p]);
+//      	          Rprintf("nhxtmp = %d\n", nhxtmp);
+//      	          Rprintf("sumxtmp = %f\n", sumxtmp);
+//      	          Rprintf("sumx2tmp = %f\n", sumx2tmp);
       	  	      lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nhxtmp, 0, 0, 1);
+//                  Rprintf("lgcont =%f\n", lgcont);      	        
       	  	      lgconY = lgconY + lgcont;
       	  	  	}
       	  	  }
@@ -1356,7 +1371,9 @@ void gaussian_ppmx_missing(
       	  	    lgconY = lgconY + lgcont;
       	  	  }
       	  	} // This ends the loop through ncon continuous covariates
-
+            
+//            Rprintf("lgconN = %f\n", lgconN);
+//            Rprintf("lgconY = %f\n", lgconY);
 
       	  	for(p=0; p<(*ncat); p++){
 
@@ -1472,6 +1489,7 @@ void gaussian_ppmx_missing(
       	  }
 
           if(*cohesion==2) ph[k] =  ph[k] - log((double) nh[k]);
+//          Rprintf("ph[k] = %f\n", ph[k]);
         } // This ends loop through existing clusters.
 
 
@@ -1486,6 +1504,7 @@ void gaussian_ppmx_missing(
               if(*similarity_function==1){
                 if(*consim==1){
                   lgcondraw = lgcondraw + gsimconNN(m0,v,s20,xcontmp,xcontmp*xcontmp, mnmle[p],1,0,0,1);
+//                  Rprintf("lgcondraw=%f\n", lgcondraw);
                 }
                 if(*consim==2){
               	  lgcondraw = lgcondraw + gsimconNNIG(m0, k0, nu0, s20,xcontmp,xcontmp*xcontmp, mnmle[p],s2mle[p],1,0,0,1);
@@ -1527,7 +1546,7 @@ void gaussian_ppmx_missing(
           gtilN[_nclus] = lgcatdraw + lgcondraw;
 
         }
-
+//        Rprintf("lgcondraw=%f\n", lgcondraw);
       	// Note if PPMx = FALSE, then logcon0 = lgcat0 = 0;
       	ph[_nclus] = log((double) Mdp) + lgcondraw + lgcatdraw;
 
@@ -1613,7 +1632,7 @@ void gaussian_ppmx_missing(
         for(k = 0; k < _nclus+1; k++){
           probh[k] = ph[k]/denph;
         }
-
+//        RprintVecAsMat("probh", probh, 1, _nclus+1);
         uu = runif(0.0,1.0);
 
         cprobh= 0.0;
