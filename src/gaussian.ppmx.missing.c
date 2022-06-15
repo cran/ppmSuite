@@ -1314,14 +1314,14 @@ void gaussian_ppmx_missing(
 //      	          Rprintf("nhxtmp = %d\n", nhxtmp);
 //      	          Rprintf("sumxtmp = %f\n", sumxtmp);
 //      	          Rprintf("sumx2tmp = %f\n", sumx2tmp);
-      	  	      lgcont = gsimconNNIG(m0, k0, nu0, s20, sumx2tmp, sumx2tmp, mnmle[p], s2mle[p], nhxtmp, 0, 0, 1);
+      	  	      lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nhxtmp, 0, 0, 1);
 //                  Rprintf("lgcont =%f\n", lgcont);      	        
       	  	      lgconN = lgconN + lgcont;
       	  	  	}
       	  	  }
       	  	  if(*similarity_function==2){
       	  	  	if(*consim==1){
-      	  	      lgcont = gsimconNN(m0, v, s20, sumx2tmp, sumx2tmp, mnmle[p], nhxtmp, 1, 0, 1);
+      	  	      lgcont = gsimconNN(m0, v, s20, sumxtmp, sumx2tmp, mnmle[p], nhxtmp, 1, 0, 1);
       	  	      lgconN = lgconN + lgcont;
       	  	  	}
       	  	  	if(*consim==2){

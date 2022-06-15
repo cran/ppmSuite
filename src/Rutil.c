@@ -715,6 +715,63 @@ double gsimconNN(double m0, double v2, double s20, double sumx, double sumx2, do
 
 }
 
+// normal-normal-IG Similarity function with x following normal and m,v a normal-IG.
+// I didn't carry out integration explicitly over m and v. I simply used the fact that
+// marginal likelihood (similarity) is equal to likelihood x prior / posterior.  This
+// requires inserting a value for m and v which I use 0 and 1.
+
+// The double dipper is included as an argument.
+
+//      	        lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nh[k], 0, 0, 1);
+
+double gsimconNNIG(double m0, double k0, double nu0, double s20, double sumx, double sumx2,
+				   double mnmle, double s2mle, int n, int DD, int cal, int logout){
+
+//	Rprintf("sumx = %f\n", sumx);
+//	Rprintf("sumx2 = %f\n", sumx2);
+//	Rprintf("n = %d\n", n);
+
+
+	double a0, b0, m0s, m0ss, k0s, k0ss, a0s, a0ss, b0s, b0ss;
+	double ld1, ld2, ld3, ld4, ld5, ld6, out;
+	double mu=10, v2=0.1;
+	double xbar = 0.0;
+	if(n > 0) xbar = sumx*(1/ (double) n);
+
+	a0 = 0.5*nu0;
+	b0 = 0.5*nu0*s20;
+
+
+	m0s = (k0*m0 + n*xbar)/(k0 + n);
+	k0s = k0 + (double) n;
+	a0s = a0 + 0.5*n;
+	b0s = b0 + 0.5*(sumx2 - n*xbar*xbar) + 0.5*n*k0*(xbar - m0)*(xbar - m0)/(k0+n);
+
+	m0ss = (k0s*m0s + n*xbar)/(k0s + n);
+	k0ss = k0s + (double) n;
+	a0ss = a0s + 0.5*n;
+	b0ss = b0s + 0.5*(sumx2 - n*xbar*xbar) + 0.5*n*k0s*(xbar - m0s)*(xbar - m0s)/(k0s+n);
+
+	ld1 = -0.5*n*log(2*M_PI*v2) - 0.5*(1/v2)*(sumx2 - 2*sumx*mu + n*mu*mu);
+	ld2 = dN_IG(mu, v2, m0, k0, a0, b0, 1);
+	ld3 = dN_IG(mu, v2, m0s, k0s, a0s, b0s, 1);
+	ld4 = dN_IG(mu, v2, m0ss, k0ss, a0ss, b0ss, 1);
+
+	ld5 = dN_IG(mnmle, s2mle, m0, k0, a0, b0, 1);
+	ld6 = dN_IG(mnmle, s2mle, m0s, k0s, a0s, b0s, 1);
+
+	out = ld1 + ld2 - ld3;
+
+	if(DD==1) out = ld1 + ld3 - ld4;
+	if(cal==1) out = ld5 - ld6;
+	if(!logout) out = exp(out);
+
+//	Rprintf("out = %f\n", out);
+	return(out);
+
+}
+
+
 
 // Multivariate normal-normal Similarity function with x following normal and m a normal
 // (V is fixed).   I evaluate the ratio between likelihood multiplied by prior divided by
@@ -843,61 +900,6 @@ double gsimconMVN_MVN(double *Vinv, double *m0, double *V0inv, double ldV, doubl
 
 
 
-// normal-normal-IG Similarity function with x following normal and m,v a normal-IG.
-// I didn't carry out integration explicitly over m and v. I simply used the fact that
-// marginal likelihood (similarity) is equal to likelihood x prior / posterior.  This
-// requires inserting a value for m and v which I use 0 and 1.
-
-// The double dipper is included as an argument.
-
-//      	        lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nh[k], 0, 0, 1);
-
-double gsimconNNIG(double m0, double k0, double nu0, double s20, double sumx, double sumx2,
-				   double mnmle, double s2mle, int n, int DD, int cal, int logout){
-
-//	Rprintf("sumx = %f\n", sumx);
-//	Rprintf("sumx2 = %f\n", sumx2);
-//	Rprintf("n = %d\n", n);
-
-
-	double a0, b0, m0s, m0ss, k0s, k0ss, a0s, a0ss, b0s, b0ss;
-	double ld1, ld2, ld3, ld4, ld5, ld6, out;
-	double mu=10, v2=0.1;
-	double xbar = 0.0;
-	if(n > 0) xbar = sumx*(1/ (double) n);
-
-	a0 = 0.5*nu0;
-	b0 = 0.5*nu0*s20;
-
-
-	m0s = (k0*m0 + n*xbar)/(k0 + n);
-	k0s = k0 + (double) n;
-	a0s = a0 + 0.5*n;
-	b0s = b0 + 0.5*(sumx2 - n*xbar*xbar) + 0.5*n*k0*(xbar - m0)*(xbar - m0)/(k0+n);
-
-	m0ss = (k0s*m0s + n*xbar)/(k0s + n);
-	k0ss = k0s + (double) n;
-	a0ss = a0s + 0.5*n;
-	b0ss = b0s + 0.5*(sumx2 - n*xbar*xbar) + 0.5*n*k0s*(xbar - m0s)*(xbar - m0s)/(k0s+n);
-
-	ld1 = -0.5*n*log(2*M_PI*v2) - 0.5*(1/v2)*(sumx2 - 2*sumx*mu + n*mu*mu);
-	ld2 = dN_IG(mu, v2, m0, k0, a0, b0, 1);
-	ld3 = dN_IG(mu, v2, m0s, k0s, a0s, b0s, 1);
-	ld4 = dN_IG(mu, v2, m0ss, k0ss, a0ss, b0ss, 1);
-
-	ld5 = dN_IG(mnmle, s2mle, m0, k0, a0, b0, 1);
-	ld6 = dN_IG(mnmle, s2mle, m0s, k0s, a0s, b0s, 1);
-
-	out = ld1 + ld2 - ld3;
-
-	if(DD==1) out = ld1 + ld3 - ld4;
-	if(cal==1) out = ld5 - ld6;
-	if(!logout) out = exp(out);
-
-//	Rprintf("out = %f\n", out);
-	return(out);
-
-}
 
 // Multivariate normal-normal-inverse-wishart Similarity function with x following normal
 // and (m, V) following a N-IW.   I evaluate the ratio between likelihood multiplied by prior

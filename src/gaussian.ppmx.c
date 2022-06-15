@@ -1219,7 +1219,7 @@ static void gaussian_ppmx(
       	  	  }
       	  	  if(*similarity_function==2){
       	  	  	if(*consim==1){
-      	  	      lgcont = gsimconNN(m0, v, s20, sumx2tmp, sumx2tmp, mnmle[p], nh[k], 1, 0, 1);
+      	  	      lgcont = gsimconNN(m0, v, s20, sumxtmp, sumx2tmp, mnmle[p], nh[k], 1, 0, 1);
       	  	      lgconN = lgconN + lgcont;
       	  	  	}
       	  	  	if(*consim==2){
