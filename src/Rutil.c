@@ -221,7 +221,16 @@ int factorial(int n){
 }
 
 
+// Matrix tranpose
+void mat_transpose(double *mat, double *tmat, int nr, int nc){
 
+  int i, j;
+  for(i = 0; i < nr; i++){
+    for(j = 0; j < nc; j++){
+      tmat[j*nr + i] = mat[i*nc + j];
+    }
+  }
+}
 
 //============================================================
 // Random Number Generation

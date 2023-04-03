@@ -60,11 +60,11 @@ gaussian_ppmx(y, X=NULL, Xpred=NULL,
     \item 4 - Mean Gower dissimilarity (Gower dissimilarity is not available if missing values are present in X)
   }
 }
-\item{consim}{If similarity_function is either set to 1 or 2, then this specifies the type of marginal likelihood used as the similarity function. Options are 1 or 2 with
+\item{consim}{If similarity_function is set to either 1 or 2, then consim specifies the type of marginal likelihood used as the similarity function. Options are 1 or 2 with
   \itemize{
      \item 1 - N-N(m0, s20, v) (v variance of ``likelihood'', m0 and s20 ``prior'' parameters),
 
-    \item 2 - N-NIG(m0,s20, k0, nu0) (m0 and s20 center and scale of Gaussian, k0 and nu0 shape and scale of Inverse Gamma)
+    \item 2 - N-NIG(m0, k0, nu0, s20) (m0 and k0 center and inverse scalar of a Gaussian, and nu0 and s20 are the number of prior observations and prior variance guess of a Inverse-Chi-Square distribution.)
   }
 }
 \item{calibrate}{Indicates if the similarity should be calibrated.  Options are 0-2 with
@@ -79,20 +79,20 @@ gaussian_ppmx(y, X=NULL, Xpred=NULL,
 \itemize{
     \item m0 - center continuous similarity with default 0,
 
-    \item s20 - spread of 'prior' continuous similarity with default 1,
+    \item s20 - spread of continuous similarity with default 1 if consim=1.  For consim=2 guess of x's variance,
 
-    \item v2 - spread of 'likelihood' for conitnuous similarity (smaller values place more weight partitions with clusters that contain homogeneous  covariate values)
+    \item v2 - spread of 'likelihood' for conitnuous similarity (smaller values place more weight on partitions with clusters that contain homogeneous  covariate values)
 
-    \item k0 - degrees of freedom upper for v (only used for N-NIG similarity model)
+   \item  k0 - inverse scale for v (only used for N-NIG similarity model)
 
-    \item nu0 - scale for v (only used for N-NIG similarity model)
+    \item nu0 - prior number of x "observations" (only used for N-NIG similarity model)
 
-    \item a0 - dirichlet weight for categorical similarity with default of 0.1 (smaller more weight placed on this variable)
+    \item a0 - dirichlet weight for categorical similarity with default of 0.1 (smaller values place more weight on partitions with individuals that are in the same category.)
 
-    \item alpha - weight associated with cluster-variance and Gower disimilarity
- }
+   \item  alpha - weight associated with cluster-variance and Gower disimilarity
 }
-\item{modelPriors}{Vector of prior parameter values used in the PPMx prior.
+}
+\item{modelPriors}{Vector of prior parameter values for priors assigned to parameters of the Gaussian data model.
   \itemize{
     \item m - prior mean for mu0 with default equal to 0,
 
@@ -100,7 +100,7 @@ gaussian_ppmx(y, X=NULL, Xpred=NULL,
 
     \item A - upper bound on sigma2*_j with default equal to 10
 
-   \item B - upper bound on sig20 with default equal to 10
+   \item A0 - upper bound on sig20 with default equal to 10
 }
 }
 \item{mh}{two dimensional vector containing values for tunning parameter associated with MH update for sigma2 and sigma20}
@@ -118,11 +118,11 @@ gaussian_ppmx(y, X=NULL, Xpred=NULL,
 \details{
 This function is able to fit a Gaussian PPM or PPMx model as detailed in (Mueller, Quintana, and Rosner, 2011).  The data model is a Gaussian distribution with cluster-specific means and variances.  If meanModel = 2, then a ``global'' regression component is added to the mean.  Conjugate priors are used for cluster-specific means while uniform priors are used for variance components.  A variety of options associated with the similarity function of the PPMx are available.  See Page, Quintana 2018; Mueller, Quintana, Rosner 2011 for more details.
 
-If covariate matrix contains missing values, then the approach described in  Page, Quintana, Mueller (2020) is automatically employed.  Missing values must be denoted using "NA". Currently, NAs cannot be accommodated if a ``global'' regression is desired.
+If covariate matrix contains missing values, then the approach described in  Page, Quintana, Mueller (2022) is automatically employed.  Missing values must be denoted using "NA". Currently, NAs cannot be accommodated if a ``global'' regression is desired.
 
-All continuous X's are standardized to have mean 0 and unit standard deviation before being passed to the PPMx partition model.  However, for meanModel = 2 the regression coefficients are estimated on the original scale and are ordered such that the continuous covariates appear first and the categorical covariates come after.
+We recommend standardizing covariates so thay they have mean zero and standard deviation one.  This makes the default values provided for the similarity function reasonable in most cases.  If covariates are standardized and meanModel = 2 the regression coefficients are estimated on the original scale and are ordered such that the continuous covariates appear first and the categorical covariates come after.
 
-The computational implementation of the model is based on algorithm 8 found in Neal 2000.
+The MCMC algorithm used to sample from the joint posterior distribution is based on algorithm 8 found in Neal 2000.
 
 
 }
@@ -167,8 +167,6 @@ The output list contains the following
 \item predclass - a matrix of dimension (T, P) containing MCMC iterates of cluster two which "new" subject is allocated
 
 \item rbpred - a matrix of dimension (T, P) containing out of sample preditions for each "new" subject at each MCMC iterate based on the rao-blackwellized prediction
-
-\item predclass_prob - a matrix of dimension (T, P*N) that contains the cluster allocation probabilities.  They are organized so that each row corresponds to an MCMC iterate.  Letting nclus represent the number of components at the t-th MCMC sample, the the first nclus columns of row t correspond to probabilities for new subject 1.  Then columns (N+1):(N+nclus) correspond to probabilities associated with new subject 2, etc.
 }
 }
 \examples{
@@ -181,10 +179,10 @@ ck <- c(4,3,2)
 pairs(bear[,ck])
 
 
-# response is length
+# response is weight
 Y <- bear$weight
 
-# Continuous Covariate is chest
+# Continuous Covariate is length of chest
 # Categorical covariate is sex
 X <- bear[,c("length", "sex")]
 X$sex <- as.factor(X$sex)
@@ -212,7 +210,8 @@ nout <- (niter - nburn)/nthin
 mh <- c(1,10)
 
 # Run MCMC algorithm for Gaussian PPMx model
-out1 <- gaussian_ppmx(y=Ytrain, X=Xtrain, Xpred=Xtest, M=M, PPM=FALSE,
+out1 <- gaussian_ppmx(y=Ytrain, X=Xtrain, Xpred=Xtest,
+              M=M, PPM=FALSE,
               meanModel = 1,
 		          similarity_function=1,
 		          consim=1,
@@ -240,7 +239,8 @@ pairs(bear[trainObs,ck],col=out1$Si[1,], pch=out1$Si[1,])
 
 # Compare fit and predictions when covariates are not included
 # in the partition model.  That is, refit data with PPM rather than PPMx
-out2 <- gaussian_ppmx(y=Ytrain, X=Xtrain, Xpred=Xtest, M=M, PPM=TRUE,
+out2 <- gaussian_ppmx(y=Ytrain, X=Xtrain, Xpred=Xtest,
+              M=M, PPM=TRUE,
               meanModel = 1,
 		          similarity_function=1,
 		          consim=1,

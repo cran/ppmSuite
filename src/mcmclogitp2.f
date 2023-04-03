@@ -1,16 +1,16 @@
 c=======================================================================
 c=======================================================================
-      subroutine mcmclogitp(nburn,nskip,nsave,ndata,nseries,ydata,
+      subroutine mcmclogitp2(nburn,nskip,nsave,ndata,nseries,ydata,
      & nu0,mu0,invsigma0,logdetsigma0,mltypes,nthetas,thetas,devs,
      & verbose,mcmcc,mcmcp)
 c=======================================================================
 c=======================================================================
-c     BEGIN: MCMCLOGITP SUBROUTINE
+c     BEGIN: MCMCLOGITP2 SUBROUTINE
       implicit none
 c=======================================================================
 c     DESCRIPTION
 c=======================================================================
-c     "MCMCLOGITP" RETURNS POSTERIOR SAMPLES FROM THE FOLLOWING
+c     "MCMCLOGITP2" RETURNS POSTERIOR SAMPLES FROM THE FOLLOWING
 c     BAYESIAN MODEL FOR CHANGE-POINT DETECTION:
 c
 c     A) PRIOR SPECIFICATION FOR CHANGE-POINT INDICATORS:
@@ -20,17 +20,17 @@ c
 c        HERE, C[I,T]=1 IF TIME T+1 IN (Y[I,S]:S=1,...,N) IS A
 c        CHANGE-POINT.
 c
-c     A.1) LET P=(P[I,T]:I=1,...,L AND T=1,...,N-1) BE A MATRIX WITH
-c          ENTRIES ON [0,1]. THEN,
+c     A.1) LET P=(P[I]:I=1,...,L) BE A VECTOR WITH ENTRIES ON (0,1).
+c          THEN,
 c
-c          C[I,T]|P[I,T]~BERN(P[I,T]).
+c          C[I,T]|P[I]~BERNOULLI(P[I]).
 c
 c          · BERN(·|P): BERNOULLI P.M.F. WITH PARAMETER P IN [0,1].
 c
-c     A.2) THE VECTORS (P[I,T]:I=1,...,L) ARE I.I.D. WITH COMMON
-c          DISTRIBUTION LOGIT-T[L](NU[0],MU[0],SIGMA[0]), I.E.,
+c     A.2) THE VECTOR (P[I]:I=1,...,L) FOLLOWS A
+c          LOGIT-T[L](NU[0],MU[0],SIGMA[0]) DISTRIBUTION, I.E.,
 c
-c          (LOGIT(P[I,T]):I=1,...,L)~T[L](NU[0],MU[0],SIGMA[0]).
+c          (LOGIT(P[I]):I=1,...,L)~T[L](NU[0],MU[0],SIGMA[0]).
 c
 c          HERE, T[L](NU[0],MU[0],SIGMA[0]) IS THE L-DIMENSIONAL
 c          STUDENT DISTRIBUTION WITH DEGREES OF FREEDOM NU[0],
@@ -85,17 +85,17 @@ c     mltypes: MARGINAL LIKELIHOOD TYPES (ML[I](·):T=1,...,N)
       integer mltypes(nseries)
 c     nthetas: MAXIMUM OF {DIMENSION(THETA[I]):I=1,...,L}
       integer nthetas
-c     thetas: PARAMETERS FOR EACH (ML[I](·):I=1,...,L)
+c     thetas: PARAMETERS (THETA[I]:I=1,...,L)
       real(8) thetas(nseries,nthetas)
 c     devs: STANDARD DEVIATIONS FOR RW-MH UPDATES
-      real(8) devs(nseries,ndata-1)
+      real(8) devs(nseries)
 c=======================================================================
 c     OUTPUTS: MCMC SAMPLES
 c=======================================================================
 c     mcmcc: (C[I,T]:I=1,...,L AND T=1,...,N-1)
       integer mcmcc(nsave,(ndata-1)*nseries)
-c     mcmcp: (P[I,T]:I=1,...,L AND T=1,...,N-1)
-      real(8) mcmcp(nsave,(ndata-1)*nseries)
+c     mcmcp: (P[I]:I=1,...,L)
+      real(8) mcmcp(nsave,nseries)
 c=======================================================================
 c     C++ FUNCTIONS
 c=======================================================================
@@ -134,12 +134,12 @@ c     EXCLUSIVE FOR UPDATING (C[I,T]:I=1,...,L AND T=1,...,N-1)
       integer eo(ndata)
       integer en(ndata)
       integer c(nseries,ndata-1)
-c     EXCLUSIVE FOR UPDATING (P[I,T]:I=1,...,L AND T=1,...,N-1)
+c     EXCLUSIVE FOR UPDATING (P[I]:I=1,...,L)
       real(8) po
       real(8) pn
       real(8) logitpo(nseries)
       real(8) logitpn(nseries)
-      real(8) p(nseries,ndata-1)
+      real(8) p(nseries)
 c=======================================================================
 c     WORKING VARIABLES 2
 c=======================================================================
@@ -166,13 +166,13 @@ c     CHANGE-POINT INDICATORS (C[I,T]=0:I=1,...,L AND T=1,...,N-1)
             c(i,t)=0
          end do
       end do
-c     PROBABILITIES (P[I,T]:I=1,...,L AND T=1,...,N-1)
-      do t=1,(ndata-1)
-         do i=1,nseries
-            p(i,t)=1.d0/dble(ndata)
-c            p(i,t)=0.5
-         end do
+c     PROBABILITIES (P[I]:I=1,...,L)
+      do i=1,nseries
+         p(i)=1.d0/dble(ndata)
       end do
+
+
+
 c=======================================================================
 c     METROPOLIS-HASTINGS-WITHIN-GIBBS ALGORITHM
 c=======================================================================
@@ -219,7 +219,7 @@ c               print *, "ml_left", rw
                j=eo(t)
                call logml(k,ndata,y,nthetas,theta,eo,j,rw)
                sw=sw-rw
-               llr=sw+(dlog(p(i,t))-dlog(1.d0-p(i,t)))
+               llr=sw+(dlog(p(i))-dlog(1.d0-p(i)))
                uw=unifr(0.d0,1.d0)
                rw=dlog(uw)-dlog(1.d0-uw)
                if (llr.gt.rw) then
@@ -233,33 +233,34 @@ c               print *, "ml_left", rw
 c=======================================================================
 c        UPDATING PROBABILITY PARAMETERS
 c=======================================================================
-         do t=1,(ndata-1)
-            do i=1,nseries
-               po=p(i,t)
-               pn=normr(po,devs(i,t))
-               if ((pn.gt.0.d0).and.(pn.lt.1.d0)) then
-                  do s=1,nseries
-                     logitpo(s)=dlog(p(s,t))-dlog(1.d0-p(s,t))
-                     logitpn(s)=logitpo(s)
-                  end do
-                  logitpn(i)=dlog(pn)-dlog(1.d0-pn)
-                  cw=dble(c(i,t))
-                  call logmvtd(nseries,logitpo,nu0,mu0,invsigma0,
-     &                 logdetsigma0,rw)
-                  sw=binomd(cw,1.d0,po,1)
-                  llo=(rw+sw)-(dlog(po)+dlog(1.d0-po))
-                  call logmvtd(nseries,logitpn,nu0,mu0,invsigma0,
-     &                 logdetsigma0,rw)
-                  sw=binomd(cw,1.d0,pn,1)
-                  lln=(rw+sw)-(dlog(pn)+dlog(1.d0-pn))
-                  llr=lln-llo
-                  uw=unifr(0.d0,1.d0)
-                  rw=dlog(uw)
-                  if (llr.gt.rw) then
-                     p(i,t)=pn
-                  end if
+         do i=1,nseries
+            po=p(i)
+            pn=normr(po,devs(i))
+            if ((pn.gt.0.d0).and.(pn.lt.1.d0)) then
+               do s=1,nseries
+                  logitpo(s)=dlog(p(s))-dlog(1.d0-p(s))
+                  logitpn(s)=logitpo(s)
+               end do
+               logitpn(i)=dlog(pn)-dlog(1.d0-pn)
+               cw=0.d0
+               do t=1,(ndata-1)
+                  cw=cw+dble(c(i,t))
+               end do
+               call logmvtd(nseries,logitpo,nu0,mu0,invsigma0,
+     &              logdetsigma0,rw)
+               sw=(cw*dlog(po))+((dble(ndata-1)-cw)*dlog(1.d0-po))
+               llo=(rw+sw)-(dlog(po)+dlog(1.d0-po))
+               call logmvtd(nseries,logitpn,nu0,mu0,invsigma0,
+     &              logdetsigma0,rw)
+               sw=(cw*dlog(pn))+((dble(ndata-1)-cw)*dlog(1.d0-pn))
+               lln=(rw+sw)-(dlog(pn)+dlog(1.d0-pn))
+               llr=lln-llo
+               uw=unifr(0.d0,1.d0)
+               rw=dlog(uw)
+               if (llr.gt.rw) then
+                  p(i)=pn
                end if
-            end do
+            end if
          end do
 c=======================================================================
 c        PRINT ON SCREEN: BURN-IN PHASE COMPLETED
@@ -283,15 +284,13 @@ c           CHANGE-POINT INDICATORS AND PROBABILITIES
                do t=1,(ndata-1)
                   s=s+1
                   mcmcc(stored,s)=c(i,t)
-                  mcmcp(stored,s)=p(i,t)
                end do
+               mcmcp(stored,i)=p(i)
             end do
 c=======================================================================
 c           PRINT ON SCREEN: STORED ITERATION (MULTIPLES OF 100)
-            if(verbose.eq.1) then
-              if (mod(stored,100).eq.0) then
-c                 print *,stored,'stored MCMC iterations'
-              end if
+            if (mod(stored,100).eq.0) then
+c               print *,stored,'stored MCMC iterations'
             end if
 c=======================================================================
 c           UPDATING: COUNTER (STORED ITERATION)
@@ -307,12 +306,10 @@ c     END: MCMC ITERATIONS
       call rndend()
 c=======================================================================
 c     PRINT ON SCREEN: END OF MCMC ITERATIONS
-      if(verbose.eq.1) then
-c        print *,'End of MCMC iterations'
-      end if
+c      print *,'End of MCMC iterations'
 c=======================================================================
       return
-c     END: MCMCLOGITP SUBROUTINE
+c     END: MCMCLOGITP2 SUBROUTINE
       end
 c=======================================================================
 c=======================================================================

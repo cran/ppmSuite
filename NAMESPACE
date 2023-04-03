@@ -6,4 +6,6 @@ export(sppm)
 export(rppmx)
 export(ccp_ppm)
 export(icp_ppm)
+export(curve_ppmx)
 
+importFrom("stats", "quantile")

@@ -5,9 +5,9 @@
 ## -o FileName
 ## If ToolsLA.f is needed: add -llapack -lblas after FileName
 
-
 ## "MCMCLOGITP" subroutine
-ccp_ppm = function(ydata,nu0,mu0,sigma0,mltypes,
+ccp_ppm = function(ydata, model=1,
+                       nu0,mu0,sigma0,mltypes,
                        thetas,devs,nburn,nskip,nsave, verbose=FALSE){
 
   ndata = dim(ydata)[2]
@@ -17,9 +17,10 @@ ccp_ppm = function(ydata,nu0,mu0,sigma0,mltypes,
   nthetas = 4
   thetas = thetas[,1:nthetas]
   mcmcc = matrix(2,nrow=nsave,ncol=((ndata-1)*nseries))
-  mcmcp = matrix(0,nrow=nsave,ncol=((ndata-1)*nseries))
 #  print(thetas)
-  foo = .Fortran("mcmclogitp",
+  if(model==1){
+    mcmcp = matrix(0,nrow=nsave,ncol=((ndata-1)*nseries))
+    foo = .Fortran("mcmclogitp",
                  nburn=as.integer(nburn),
                  nskip=as.integer(nskip),
                  nsave=as.integer(nsave),
@@ -37,7 +38,30 @@ ccp_ppm = function(ydata,nu0,mu0,sigma0,mltypes,
                  verbose=as.integer(verbose),
                  mcmcc=as.integer(mcmcc),
                  mcmcp=as.double(mcmcp))
+  }
+  if(model==2){
+    mcmcp = matrix(0,nrow=nsave,ncol=(nseries))
+    devs <- devs[,1]
+    foo = .Fortran("mcmclogitp2",
+                   nburn=as.integer(nburn),
+                   nskip=as.integer(nskip),
+                   nsave=as.integer(nsave),
+                   ndata=as.integer(ndata),
+                   nseries=as.integer(nseries),
+                   ydata=as.double(ydata),
+                   nu0=as.double(nu0),
+                   mu0=as.double(mu0),
+                   invsigma0=as.double(invsigma0),
+                   logdetsigma0=as.double(logdetsigma0),
+                   mltypes=as.integer(mltypes),
+                   nthetas=as.integer(nthetas),
+                   thetas=as.double(thetas),
+                   devs=as.double(devs),
+                   verbose=as.integer(verbose),
+                   mcmcc=as.integer(mcmcc),
+                   mcmcp=as.double(mcmcp))
 
+  }
   C = matrix(foo$mcmcc,nrow=nsave,byrow=FALSE)
   P = matrix(foo$mcmcp,nrow=nsave,byrow=FALSE)
 

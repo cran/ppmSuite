@@ -65,11 +65,11 @@ ordinal_ppmx(y, co, X=NULL,Xpred=NULL,
 
     \item 4 - Mean Gower disimilarity (this one not available if missing values are present in X)}
 }
-\item{consim}{If similarity_function is set to either 1 or 2, then consim specifies the type of marginal likelihood used as the similarity function. Options are
+\item{consim}{If similarity_function is set to either 1 or 2, then consim specifies the type of marginal likelihood used as the similarity function. Options are (see simparms argument for more details)
 \itemize{
     \item 1 - N-N(m0, s20, v) (v variance of ''likelihood'', m0 and s20 ''prior'' parameters),
 
-    \item 2 - N-NIG(m0,s20, k0, nu0) (m0 and s20 center and scale of Gaussian, k0 and nu0 )}
+    \item 2 - N-NIG(m0, k0, nu0, s20) (m0 and k0 center and inverse scalar of a Gaussian, and nu0 and s20 are the number of prior observations and prior variance guess of a Inverse-Chi-Square distribution.)}
 }
 \item{calibrate}{This argument determines if the similarity should be calibrated.  Options are
 \itemize{
@@ -83,20 +83,20 @@ ordinal_ppmx(y, co, X=NULL,Xpred=NULL,
 \itemize{
     \item m0 - center continuous similarity with default 0,
 
-    \item s20 - spread of continuous similarity with default 1,
+    \item s20 - spread of continuous similarity with default 1 if consim=1.  For consim=2 guess of x's variance,
 
     \item v2 - spread of 'likelihood' for conitnuous similarity (smaller values place more weight on partitions with clusters that contain homogeneous  covariate values)
 
-   \item  k0 - degrees of freedom upper for v (only used for N-NIG similarity model)
+   \item  k0 - inverse scale for v (only used for N-NIG similarity model)
 
-    \item nu0 - scale for v (only used for N-NIG similarity model)
+    \item nu0 - prior number of x "observations" (only used for N-NIG similarity model)
 
     \item a0 - dirichlet weight for categorical similarity with default of 0.1 (smaller values place more weight on partitions with individuals that are in the same category.)
 
    \item  alpha - weight associated with cluster-variance and Gower disimilarity
 }
 }
-\item{modelPriors}{Vector of prior parameter values used in the PPMx prior.
+\item{modelPriors}{Vector of prior parameter values for priors assigned to parameters of the Gaussian latent model.
 \itemize{
     \item m - prior mean for mu0 with default equal to 0,
 
@@ -104,7 +104,7 @@ ordinal_ppmx(y, co, X=NULL,Xpred=NULL,
 
     \item A - upper bound on sigma2*_j with default equal to 10
 
-    \item B - upper bound on sig20 with default equal to 10
+    \item A0 - upper bound on sig20 with default equal to 10
 }
 }
 \item{mh}{two dimensional vector containing values for tunning parameter associated with MH update for sigma2 and sigma20}
@@ -122,7 +122,7 @@ ordinal_ppmx(y, co, X=NULL,Xpred=NULL,
 \details{
 This function fits an ordinal probit model with either a PPM or PPMx prior on partitions.  For details on the ordinal probit model see Kottas et al (2005) and Page, Quintana, Rosner (2020).  Cutpoints listed in the ``co'' argument can be arbitrarily selected, but values that are too far from zero will result in an algorithm that will require more burn-in.   Based on these cutpoints latent variables are introduced.  The latent variables are assumed to follow a Gaussian distribution with cluster-specific means and variances. If meanModel = 2, then a ``global'' regression component is added to the mean resulting in a model with cluster-specific parallel regression lines.  Commonly used conjugate priors are then employed in the regression component.
 
-If covariates contain missing values, then the approach developed in Page, Quintana, Mueller (2020) is automatically employed.  Missing values must be denoted using "NA".  Currently, NAs cannot be accommodated if a ``global'' regression is desired (i.e., meanMode = 2).
+If covariates contain missing values, then the approach developed in Page, Quintana, Mueller (2022) is automatically employed.  Missing values must be denoted using "NA".  Currently, NAs cannot be accommodated if a ``global'' regression is desired (i.e., meanMode = 2).
 
 We recommend standardizing covariates so thay they have mean zero and standard deviation one.  This makes the default values provided for the similarity function reasonable in most cases.  If covariates are standardized and meanModel = 2 the regression coefficients are estimated on the original scale and are ordered such that the continuous covariates appear first and the categorical covariates come after.
 
@@ -172,8 +172,6 @@ The output list contains the following
 
 \item rbpred - a matrix of dimension (T, P) containing out of sample preditions at the latent variable level for each "new" subject at each MCMC iterate based on the rao-blackwellized prediction
 
-\item predclass_prob - a matrix of dimension (T, P*N) that contains the cluster allocation probabilities.  They are organized so that each row corresponds to an MCMC iterate.  Letting nclus represent the number of components at the t-th MCMC sample, the first nclus columns of row t correspond to probabilities for new subject 1.  Then columns (N+1):(N+nclus) correspond to probabilities associated with new subject 2, etc.
-
 \item ord.fitted.values - a matrix of dimension (T, N) containing fitted values on the ordinal variable scale for each subject at each MCMC iterate.
 
 \item ord.ppred - a matrix of dimension (T, P) containing out of sample preditions on the ordinal variable scale for each ``new'' subject at each MCMC iterate from the posterior predictive distribution.
@@ -210,7 +208,7 @@ ytt <- Y[-keep]
 # Since we have a binary response there are two "latent states".
 # The boundaries of the latent states can be selected arbitrarily.
 # Below I essentially use (-Inf, 0, Inf) to define the two latent spaces.
-co <- c(-100000, 0, 100000)
+co <- c(-1e5, 0, 1e5)
 
 
 #             m0   s20  v    k0   n0   a0   alpha

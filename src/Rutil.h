@@ -13,6 +13,7 @@ void RprintIvec(char*,int*,int);
 void RprintImat(char*,int**,int,int);
 void RprintIVecAsMat(char*,int*,int,int);
 int factorial(int);
+void mat_transpose(double*, double*, int, int);
 void ran_mvnorm(double*,double*,int,double*,double*);
 void ran_wish(int,double*,int,double*,double*,double*,double*);
 void ran_dirich(double*, int, double*, double*);

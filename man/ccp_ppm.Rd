@@ -11,7 +11,7 @@ point model, where the set of change point indicators between time series are co
 }
 
 \usage{
-ccp_ppm(ydata,
+ccp_ppm(ydata, model=1,
          nu0, mu0, sigma0,
          mltypes, thetas,
          devs,
@@ -22,6 +22,9 @@ ccp_ppm(ydata,
 \arguments{
 \item{ydata}{An \eqn{L \times n} data matrix, where \eqn{L} is the number of
 time series and \eqn{n}, the number of time points.}
+
+\item{model}{Determines of model fit is such that there are p_{it}s (model=1) or
+only p_t (model=2)}
 
 \item{nu0}{Degrees of freedom of the multivariate Student's
 t-distribution (see section Details).}
