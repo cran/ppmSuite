@@ -1,8 +1,8 @@
-bandSparse <- Matrix::bandSparse
+
 
 
 K1 <- function(dim){
-  K <- bandSparse(dim, k=-c(1), diagonals=list(rep(-1,dim)), symmetric=TRUE)
+  K <- Matrix::bandSparse(dim, k=-c(1), diagonals=list(rep(-1,dim)), symmetric=TRUE)
   diag(K) <- c(1,rep(2,dim-2),1)
   K <- matrix(as.numeric(K),nrow=dim, byrow=TRUE)
   K
@@ -10,7 +10,7 @@ K1 <- function(dim){
 
 K2 <- function(dim){
   tmp <- list(c(-2,rep(-4,dim-3),-2),rep(1,dim))
-  K <- bandSparse(dim,k=-c(1:2), diagonals=tmp,symmetric=TRUE)
+  K <- Matrix::bandSparse(dim,k=-c(1:2), diagonals=tmp,symmetric=TRUE)
   diag(K) <- c(1,5,rep(6,dim-4),5,1)
   K <- matrix(as.numeric(K),nrow=dim, byrow=TRUE)
   K
@@ -20,7 +20,7 @@ K3 <- function(dim){
   tmp <- list(c(-3,-12,rep(-15,dim-5), -12,-3),
               c(3,rep(6,dim-4),3),
               rep(-1,dim))
-  K <- bandSparse(dim,k=-c(1:3), diagonals=tmp,symmetric=TRUE)
+  K <- Matrix::bandSparse(dim,k=-c(1:3), diagonals=tmp,symmetric=TRUE)
   diag(K) <- c(1,10,19,rep(20,dim-6),19,10,1)
   K <- matrix(as.numeric(K),nrow=dim, byrow=TRUE)
   K
@@ -31,7 +31,7 @@ K4 <- function(dim){
               c(6,22,rep(28,dim-4-2),22,6),
               c(-4,rep(-8,dim-2-3),-4),
               rep(1,dim-4))
-  K <- bandSparse(dim,k=-c(1:4), diagonals=tmp,symmetric=TRUE)
+  K <- Matrix::bandSparse(dim,k=-c(1:4), diagonals=tmp,symmetric=TRUE)
   diag(K) <- c(1,17,53,69, rep(70,dim-8),69,53,17,1)
   K <- matrix(as.numeric(K),nrow=dim, byrow=TRUE)
   K
@@ -44,7 +44,7 @@ K5 <- function(dim){
               c(-10,-35,rep(-45,dim-4-3),-35,-10),
               c(5,rep(10,dim-2-4),5),
               rep(-1,dim-5))
-  K <- bandSparse(dim,k=-c(1:5), diagonals=tmp,symmetric=TRUE)
+  K <- Matrix::bandSparse(dim,k=-c(1:5), diagonals=tmp,symmetric=TRUE)
   diag(K) <- c(1,26,126,226,251, rep(252,dim-10),251,226,126,26,1)
   K <- matrix(as.numeric(K),nrow=dim, byrow=TRUE)
   K

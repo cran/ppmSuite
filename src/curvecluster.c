@@ -128,7 +128,7 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin,
                         double *beta, double *beta0, double *sig2, double *mub0,
                         double *sig2b0,double *lam, double *tau2, double *theta,
                         double *mu, int *Si, int *nclus,
-                        double *ppred,   int *predclass, double *llike,
+                        double *ppred, int *predclass, double *llike,
                         double *lpml, double *WAIC){
 
   // i - MCMC iterate
@@ -350,7 +350,7 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin,
 
 
   // stuff that I need to update Si (cluster labels);
-  int iaux, nhtmp;
+  int iaux=1, nhtmp;
 
   double auxt, auxl, auxth, uu, tmp;
   double sumsq, maxph, denph, cprobh;

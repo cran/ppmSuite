@@ -2,11 +2,10 @@ Package: ppmSuite
 Type: Package
 Title: A Collection of Models that Employ Product Partition
         Distributions as a Prior on Partitions
-Version: 0.3.1
+Version: 0.3.2
 Authors@R: c(
   person(given = "Garritt L.", family = "Page", email = "page@stat.byu.edu", role = c("aut", "cre", "cph")),
   person(given = "Jose", family = "J. Quinlan", email = "jjquinla@uc.cl", role = c("aut", "cph")),
-  person(given = "Matthew J.", family = "Heiner", email = "heiner@stat.byu.edu", role = c("aut", "cph")),
 	person(given = "S. McKay", family = "Curtis", email = "s.mckay.curtis@gmail.com", role = c("ctb", "cph")),
 	person(given = "Radford M.", family = "Neal", role = c("ctb", "cph")))
 Maintainer: Garritt L. Page <page@stat.byu.edu>
@@ -28,11 +27,10 @@ LazyData: true
 Suggests: cluster
 Imports: Matrix
 NeedsCompilation: yes
-Packaged: 2023-04-03 18:58:51 UTC; gpage
+Packaged: 2023-04-08 16:53:26 UTC; gpage
 Author: Garritt L. Page [aut, cre, cph],
   Jose J. Quinlan [aut, cph],
-  Matthew J. Heiner [aut, cph],
   S. McKay Curtis [ctb, cph],
   Radford M. Neal [ctb, cph]
 Repository: CRAN
-Date/Publication: 2023-04-03 19:30:02 UTC
+Date/Publication: 2023-04-09 14:30:02 UTC

@@ -71,25 +71,25 @@
 *****************************************************************************************/
 
 
-void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin,
-                                 int *nsubject, int *nobs,
-                                 double *y1, double *y2, double *z,
-                                 int *q, int *nknots, double *knots, double *K,
-                                 int *ncon, int *ncat,int *Cvec,
-                                 double *Xcon, int *Xcat,
-                                 int *PPM, double *M,
-                                 int *gcontype, int *gcattype, int *consim,
-                                 int *npred, int *npredobs, double *Xconp, int *Xcatp,
-                                 double *simParms, double *Aparm,
-                                 int *calibrate, double *modelPriors, double *Hmat,
-                                 int *balanced, double *mh,
-                                 double *beta1, double *beta2, double *beta01, double *beta02,
-                                 double *sig21, double *sig22, double *mub01, double *mub02,
-                                 double *sig2b01,double *sig2b02,double *lam1, double *lam2,
-                                 double *tau21, double *tau22, double *theta1, double *theta2,
-                                 double *mu1,double *mu2, int *Si, int *nclus,
-                                 double *ppred1,  double *ppred2, int *predclass,
-                                 double *llike, double *lpml,double *WAIC){
+void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
+                                 int *nsubject, int *nobs, //2
+                                 double *y1, double *y2, double *z, //3
+                                 int *q, int *nknots, double *knots, double *K, //4
+                                 int *ncon, int *ncat,int *Cvec, //3
+                                 double *Xcon, int *Xcat, //2
+                                 int *PPM, double *M,//2
+                                 int *gcontype, int *gcattype, int *consim, //3
+                                 int *npred, int *npredobs, double *Xconp, int *Xcatp, //4
+                                 double *simParms, double *Aparm, //2
+                                 int *calibrate, double *modelPriors, double *Hmat, //3
+                                 int *balanced, double *mh, //2
+                                 double *beta1, double *beta2, double *beta01, double *beta02, //4
+                                 double *sig21, double *sig22, double *mub01, double *mub02, //4
+                                 double *sig2b01,double *sig2b02,double *lam1, double *lam2, //4
+                                 double *tau21, double *tau22, double *theta1, double *theta2, //4
+                                 double *mu1,double *mu2, int *Si, int *nclus, //4
+                                 double *ppred1,  double *ppred2, int *predclass, //3
+                                 double *llike, double *lpml,double *WAIC){ //3
 
 
 
@@ -110,8 +110,8 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin,
   int csobs = 0;
   int nb, N ;
 
-  //	nb = *nknots + *q + 1;  //Number of B-spline basis after filling in all players;
-  if(*balanced==0) nb = *nknots + *q + 1;  //Number of B-spline basis my c function;
+  nb = *nknots + *q + 1;  //Number of B-spline basis my c function which is used internall
+                          //if data not balanced (i.e., balanced=0);
   if(*balanced==1) nb = *nknots + *q;  //Number of B-spline basis cote;
   int nout = (*draws - *burn)/(*thin);
 
@@ -270,7 +270,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin,
 
 
   // stuff that I need to update Si (cluster labels);
-  int iaux, nhtmp;
+  int iaux=1, nhtmp;
 
   double auxt1, auxl1, auxth1, uu;
   double auxt2, auxl2, auxth2;

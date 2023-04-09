@@ -9,3 +9,4 @@ export(icp_ppm)
 export(curve_ppmx)
 
 importFrom("stats", "quantile")
+importFrom("Matrix", "bandSparse")

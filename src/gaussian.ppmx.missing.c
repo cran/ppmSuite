@@ -235,7 +235,7 @@ void gaussian_ppmx_missing(
   // ===================================================================================
 
   // stuff that I need to update Si (cluster labels);
-  int iaux, auxint, nhxtmp;
+  int iaux=1, auxint, nhxtmp;
   int nhctmp[max_C];
   double auxreal, sumxtmp, sumx2tmp, npdN,npdY,npd, mn, s2k, xcontmp, uu, xb=0.0, vb=0.0;
   double mudraw, sdraw, maxph, denph, cprobh;
@@ -563,7 +563,7 @@ void gaussian_ppmx_missing(
           }
         }
       }
-      
+
 //      RprintVecAsMat("sumx = ", sumx, _nclus, *ncon);
 //      RprintVecAsMat("sumx2 = ", sumx2, _nclus, *ncon);
 
@@ -624,7 +624,7 @@ void gaussian_ppmx_missing(
       	        lgcont = gsimconNN(m0, v, s20, sumxtmp, sumx2tmp, mnmle[p], nhxtmp, 0, 0, 1);
       	        lgconY = lgconY + lgcont;
       	      }
-      	      if(*consim==2){      	        
+      	      if(*consim==2){
       	        lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nhxtmp, 0, 0, 1);
       	        lgconY = lgconY + lgcont;
       	      }
@@ -1315,7 +1315,7 @@ void gaussian_ppmx_missing(
 //      	          Rprintf("sumxtmp = %f\n", sumxtmp);
 //      	          Rprintf("sumx2tmp = %f\n", sumx2tmp);
       	  	      lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nhxtmp, 0, 0, 1);
-//                  Rprintf("lgcont =%f\n", lgcont);      	        
+//                  Rprintf("lgcont =%f\n", lgcont);
       	  	      lgconN = lgconN + lgcont;
       	  	  	}
       	  	  }
@@ -1352,7 +1352,7 @@ void gaussian_ppmx_missing(
 //      	          Rprintf("sumxtmp = %f\n", sumxtmp);
 //      	          Rprintf("sumx2tmp = %f\n", sumx2tmp);
       	  	      lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nhxtmp, 0, 0, 1);
-//                  Rprintf("lgcont =%f\n", lgcont);      	        
+//                  Rprintf("lgcont =%f\n", lgcont);
       	  	      lgconY = lgconY + lgcont;
       	  	  	}
       	  	  }
@@ -1371,7 +1371,7 @@ void gaussian_ppmx_missing(
       	  	    lgconY = lgconY + lgcont;
       	  	  }
       	  	} // This ends the loop through ncon continuous covariates
-            
+
 //            Rprintf("lgconN = %f\n", lgconN);
 //            Rprintf("lgconY = %f\n", lgconY);
 

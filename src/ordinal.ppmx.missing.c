@@ -57,13 +57,13 @@
 * Mconp = npred x ncon matrix of logicals indicating if continuous covariate is missing
 * Mcatp = npred x ncat matrix of logicals indicating if categorical covariate is missing
 * simParms = vector containing similarity functions that are ordered in the following way;
-* dissimtn = dissimilarity matrix of training covariates for Gower 
-* dissimtt = dissimilarity matrix of testing covariates for Gower 
+* dissimtn = dissimilarity matrix of training covariates for Gower
+* dissimtt = dissimilarity matrix of testing covariates for Gower
 * calibrate = integer indicating how similarity function should be calibrated
     0 - no calibration
     1 - "calibration" similarity function
     2 - "coarsened" similarity function
-* modelPriors = priors from likelihood model 
+* modelPriors = priors from likelihood model
 *
 * Output:
 * mu = nout x ncov matrix of MCMC iterates
@@ -83,12 +83,12 @@
 
 void ordinal_ppmx_missing(
           int *y, double *co, int *nobs, int *nordcat,
-          double *Xcon, int *Mcon, int *ncon, 
-          int *Xcat, int *Mcat,  int *ncat, int *Cvec, 
-          int *npred, 
-          double *Xconp, int *Mconp, 
+          double *Xcon, int *Mcon, int *ncon,
+          int *Xcat, int *Mcat,  int *ncat, int *Cvec,
+          int *npred,
+          double *Xconp, int *Mconp,
           int *Xcatp, int *Mcatp,
-          double *M, int *meanModel, double *modelPriors, double *simParms, 
+          double *M, int *meanModel, double *modelPriors, double *simParms,
           int *PPM, int *cohesion, int *similarity_function, int *consim,
           double *dissimtn, double *dissimtt, int *calibrate,  double *mh,
           int *verbose, int *draws, int *burn, int *thin,
@@ -125,7 +125,7 @@ void ordinal_ppmx_missing(
   // MLEs needed if calibration 1 option is selected.
   // Also, to facilitate selecting values for the similarity
   // function, I standardize the continuous covariates to have
-  // zero mean and unit standard deviation.  
+  // zero mean and unit standard deviation.
   double *mnmle = R_VectorInit(*ncon, 0.0);
   double *s2mle = R_VectorInit(*ncon, 1.0);
   double sum, sum2, nobserved;
@@ -203,7 +203,7 @@ void ordinal_ppmx_missing(
 
   int _nclus=0;
   int _Si[*nobs], nh[*nobs];
-    
+
   // Initialize cluster labels so that two groups exist
   for(j = 0; j < *nobs; j++){
     _zi[j] = rtnorm(0, 1, co[y[j]], co[y[j]+1]);
@@ -223,7 +223,7 @@ void ordinal_ppmx_missing(
   // Stuff to compute the posterior predictive
   double *_ispred = R_VectorInit(*nobs, 0.0);
   int _isordpred[*nobs];
-  
+
   double *_ppred = R_Vector((*npred));
   double *_rbpred = R_Vector((*npred));
   int _ordppred[*npred];
@@ -239,20 +239,20 @@ void ordinal_ppmx_missing(
   // stuff that I need to update Si (cluster labels);
   int iaux, auxint, nhxtmp;
   int nhctmp[max_C];
-  double auxreal, sumxtmp, sumx2tmp, npdN,npdY,npd, mn, xcontmp, uu, xb;
+  double auxreal, sumxtmp, sumx2tmp, npdN,npdY,npd, mn=0, xcontmp, uu, xb=0;
   double mudraw, sdraw, maxph, denph, cprobh, sdens, s2tmp;
   double lgconN,lgconY,lgcatN,lgcatY,lgcondraw,lgcatdraw;
   double lgcont,lgcatt;
-  
+
   double *ph = R_VectorInit(*nobs, 0.0);
   double *probh = R_VectorInit(*nobs, 0.0);
-  
+
   double *gtilN = R_VectorInit((*nobs+1),0.0);
   double *gtilY = R_VectorInit((*nobs+1),0.0);
   double *lgtilN = R_VectorInit((*nobs+1),0.0);
   double *lgtilY = R_VectorInit((*nobs+1),0.0);
   double sgY, sgN,  lgtilNk, lgtilYk, maxgtilY, maxgtilN;
-  
+
   double *sumx = R_VectorInit((*nobs)*(*ncon),0.0);
   double *sumx2 = R_VectorInit((*nobs)*(*ncon),0.0);
   int nhx[(*nobs)*(*ncon)];
@@ -263,19 +263,19 @@ void ordinal_ppmx_missing(
   double *sumz = R_VectorInit((*nobs),0.0);
   double *sumz2 = R_VectorInit((*nobs),0.0);
   double mstar, s2star;
-  
+
   // stuff I need to update sig2h and sig20
   double os0, ns0, lln, llo, llr, nsig, osig;
 
   // stuff I need to update mu0
   double summu, summu2;
-  
+
   //stuff I need to update beta;  Only used with meanModel = 2
 //  double *sumyxbt = R_VectorInit(ncov,0.0);
 //  double *sumXXp = R_VectorInit(ncov*ncov, 0.0);
 //  double *Sstar = R_VectorInit(ncov*ncov, 0.0);
 //  double *Mstar = R_VectorInit(ncov, 0.0);
-  
+
 
   // Stuff to compute lpml, likelihood, WAIC, and Rao-Blackwellized density values
   double _lpml, elppdWAIC;
@@ -289,7 +289,7 @@ void ordinal_ppmx_missing(
   // Prior distribution parameter values
   //
   // ===================================================================================
-  
+
   // priors for mu0
   double m = modelPriors[0]; double s2 = modelPriors[1];
 
@@ -302,17 +302,17 @@ void ordinal_ppmx_missing(
 
   // DP weight parameter
   double Mdp = *M;
-  
+
   // Similarity function parameters
   // dirichlet denominator parameter
   double *dirweights = R_VectorInit(max_C, simParms[5]);
-  
+
   double m0=simParms[0];
   double s20=simParms[1];
   double v=simParms[2];
   double k0=simParms[3];
   double nu0=simParms[4];
-  
+
   // For the variance similarity function
   double alpha = simParms[6];
 
@@ -337,7 +337,7 @@ void ordinal_ppmx_missing(
         }
       }
     }
-  
+
     // Fill in cluster-specific sufficient statistics based on first partition
     for(j = 0; j < *nobs; j++){
       for(p=0; p<*ncon; p++){
@@ -346,7 +346,7 @@ void ordinal_ppmx_missing(
           sumx2[(_Si[j]-1)*(*ncon) + p] = sumx2[(_Si[j]-1)*(*ncon) + p] + Xcon[j*(*ncon)+p]*Xcon[j*(*ncon)+p];
           nhx[(_Si[j]-1)*(*ncon) + p] = nhx[(_Si[j]-1)*(*ncon) + p] + 1;
         }
-      }  
+      }
       for(p=0; p<*ncat; p++){
         if(Mcat[j*(*ncat)+p] == 0){
           nhc[((_Si[j]-1)*(*ncat) + p)*(max_C) + Xcat[j*(*ncat)+p]] =
@@ -422,11 +422,11 @@ void ordinal_ppmx_missing(
     for(j = 0; j < *nobs; j++){
 
       if(nh[_Si[j]-1] > 1){
-        
+
         // Observation belongs to a non-singleton ...
         nh[_Si[j]-1] = nh[_Si[j]-1] - 1;
 
-          
+
         if(!(*PPM)){
           // need to reduce the sumx sumx2 to by removing the $i$th individual
           for(p = 0; p < *ncon; p++){
@@ -444,44 +444,44 @@ void ordinal_ppmx_missing(
             }
           }
         }
-        
+
       }else{
-      
+
         // Observation is a member of a singleton cluster ...
         iaux = _Si[j];
-        
+
         if(iaux < _nclus){
-          
+
           // Need to relabel clusters.  I will do this by swapping cluster labels
           // _Si[j] and _nclus along with cluster specific parameters and
           // covariate values;
-          
+
           // All members of last cluster will be assigned subject i's cluster label
           for(jj = 0; jj < *nobs; jj++){
             if(_Si[jj] == _nclus){
               _Si[jj] = iaux;
             }
           }
-          
+
           _Si[j] = _nclus;
-          
+
           // The following steps swaps order of cluster specific parameters
           // so that the newly labeled subjects from previous step retain
           // their correct cluster specific parameters
-          
+
           auxreal = _muh[iaux-1];
           _muh[iaux-1] = _muh[_nclus-1];
           _muh[_nclus-1] = auxreal;
-          
+
           auxreal = _sig2h[iaux-1];
           _sig2h[iaux-1] = _sig2h[_nclus-1];
           _sig2h[_nclus-1] = auxreal;
-          
-          
+
+
           // the number of members in cluster is also swapped with the last
           nh[iaux-1] = nh[_nclus-1];
           nh[_nclus-1] = 1;
-            
+
           if(!(*PPM)){
             // need to swap sumx and sumx2
             // here missingness only comes into play with how many subjects are in each
@@ -490,17 +490,17 @@ void ordinal_ppmx_missing(
               auxreal = sumx[(iaux-1)*(*ncon) + p];
               sumx[(iaux-1)*(*ncon) + p] = sumx[(_nclus-1)*(*ncon) + p];
               sumx[(_nclus-1)*(*ncon) + p] = auxreal;
-      
+
               auxreal = sumx2[(iaux-1)*(*ncon) + p];
               sumx2[(iaux-1)*(*ncon) + p] = sumx2[(_nclus-1)*(*ncon) + p];
               sumx2[(_nclus-1)*(*ncon) + p] = auxreal;
-              
+
               auxint = nhx[(iaux-1)*(*ncon) + p];
               nhx[(iaux-1)*(*ncon) + p] = nhx[(_nclus-1)*(*ncon) + p];
               nhx[(_nclus-1)*(*ncon) + p] = auxint;
-             
+
             }
-          
+
             // need to swap nhc as well
             for(p = 0; p < *ncat; p++){
               for(c=0; c<max_C; c++){
@@ -512,12 +512,12 @@ void ordinal_ppmx_missing(
           }
 
         }
-      
-      	// Now remove the ith obs 
+
+      	// Now remove the ith obs
       	nh[_nclus-1] = nh[_nclus-1] - 1;
-        
+
         // need to reduce the sumx sumx2 for the $i$th subject that has been "removed"
-        
+
         if(!(*PPM)){
           for(p = 0; p < *ncon; p++){
             if(Mcon[j*(*ncon)+p] == 0){
@@ -533,16 +533,16 @@ void ordinal_ppmx_missing(
                   nhc[((_nclus-1)*(*ncat) + p)*(max_C) + Xcat[j*(*ncat)+p]] - 1;
              }
           }
-        }          
+        }
 
   		// finally reduce the number of clusters
       	_nclus = _nclus - 1;
-     
+
       }
 
 
 
-      if(*meanModel==2){ 
+      if(*meanModel==2){
         // This needs to be adjusted with new idea
         xb = 0.0;
         for(b = 0; b < ncov; b++){
@@ -554,10 +554,10 @@ void ordinal_ppmx_missing(
       // update Si.
 
 
-      
-      
+
+
       // Begin the cluster probabilities
-      
+
       for(k=0; k<_nclus; k++){
         lgconY = 0.0;
       	lgconN = 0.0;
@@ -565,10 +565,10 @@ void ordinal_ppmx_missing(
       	lgcatN = 0.0;
 
       	if(!(*PPM)){
-          
+
       	  // start by calculating similarity for continuous covariates
       	  for(p=0; p<(*ncon); p++){
-      	  
+
             sumxtmp = sumx[k*(*ncon) + p];
             sumx2tmp = sumx2[k*(*ncon) + p];
             nhxtmp = nhx[k*(*ncon) + p];
@@ -582,7 +582,7 @@ void ordinal_ppmx_missing(
       	        lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nhxtmp, 0, 0, 1);
       	        lgconN = lgconN + lgcont;
       	      }
-          
+
       	    }
       	    if(*similarity_function==2){ //Double Dipper
       	      if(*consim==1){
@@ -598,8 +598,8 @@ void ordinal_ppmx_missing(
       	      lgcont = gsimconEV(sumxtmp, sumx2tmp, nhxtmp, alpha,1);
       	      lgconN = lgconN + lgcont;
       	    }
-          
-          
+
+
       	    // now add jth individual back;
       	    if(Mcon[j*(*ncon)+p] == 0){
       	      sumxtmp = sumxtmp + Xcon[j*(*ncon)+p];
@@ -607,7 +607,7 @@ void ordinal_ppmx_missing(
       	      nhxtmp = nhxtmp + 1;
             }
 
-          
+
       	    if(*similarity_function==1){ // Auxilliary
       	      if(*consim==1){
       	        lgcont = gsimconNN(m0, v, s20, sumxtmp, sumx2tmp, mnmle[p], nhxtmp, 0, 0, 1);
@@ -632,18 +632,18 @@ void ordinal_ppmx_missing(
       	      lgcont = gsimconEV(sumxtmp, sumx2tmp, nhxtmp, alpha,1);
       	      lgconY = lgconY + lgcont;
       	    }
-        
+
       	  }
-        
-        
+
+
       	  // Now calculate similarity for the categorical covariates
       	  for(p=0; p<(*ncat); p++){
-            
+
             for(c = 0; c < max_C; c++){
               nhctmp[c] = nhc[(k*(*ncat) + p)*(max_C) + c];
             }
-        
-        
+
+
       	    if(*similarity_function==1){ // Auxiliary
       	      lgcatt = gsimcatDM(nhctmp, dirweights, Cvec[p], 0, 1);
       	      lgcatN = lgcatN + lgcatt;
@@ -664,12 +664,12 @@ void ordinal_ppmx_missing(
       	  	  }
       	  	  lgcatN = lgcatN + -(alpha)*lgcatt;
       	  	}
-        
+
             // include the categorical covariate in the kth cluster
       	    if(Mcat[j*(*ncat)+p] == 0){
       	  	  nhctmp[Xcat[j*(*ncat)+p]] = nhctmp[Xcat[j*(*ncat)+p]] + 1;
             }
-            
+
       	  	if(*similarity_function==1){
       	  	  lgcatt = gsimcatDM(nhctmp, dirweights, Cvec[p], 0, 1);
       	  	  lgcatY = lgcatY + lgcatt;
@@ -691,11 +691,11 @@ void ordinal_ppmx_missing(
       	  	  lgcatY = lgcatY + -(alpha)*lgcatt;
       	  	}
       	  }
-        
-        
+
+
       	  gtilY[k] = lgconY + lgcatY;
       	  gtilN[k] = lgconN + lgcatN;
-        
+
       	  //////////////////////////////////////////////////////////
       	  // Gower Compute similarity values for gower dissimilarity
       	  //////////////////////////////////////////////////////////
@@ -704,7 +704,7 @@ void ordinal_ppmx_missing(
       	  	lgconY = 0.0;
       	  	lgconN = 0.0;
       	    for(jj = 0; jj < *nobs; jj++){
-        
+
       	  	  if((_Si[jj] == k+1) & (jj != j)){
       	  	    lgconY = lgconY + dissimtn[jj*(*nobs) + j];
       	  	    for(jjj = 0; jjj < jj; jjj++){
@@ -716,39 +716,39 @@ void ordinal_ppmx_missing(
       	  		}
       	  	  }
       	  	}
-        
+
       	  	npdN = nh[k]*(nh[k]-1)/2;
       	  	if(npdN == 0) npdN = 1.0;
       	  	npdY = (nh[k]+1)*(nh[k])/2;
-        
+
       	  	// This is cluster-mean Gower dissimilarity
       	  	lgconN = -(alpha)*lgconN/(npdN);
       	  	lgconY = -(alpha)*lgconY/(npdY);
-        
+
       	  	// I will use cluster-total gower dissimilarity
       	  	lgconN = -(alpha)*lgconN;
       	  	lgconY = -(alpha)*lgconY;
-        
+
       	  }
       	  //////////////////////////////////////////////////////////
       	  // End of Gower similarity
       	  //////////////////////////////////////////////////////////
       	} // THIS ENDS THE PPMX PART.
-      	
+
         mn = _muh[k];
         if(*meanModel==2) mn = _muh[k] + xb;
-      
-      
+
+
       	// Compute the unnormalized cluster probabilities
-      	// Note that if PPMx = FALSE then 
+      	// Note that if PPMx = FALSE then
       	// lgcatY = lgcatN = lgconY = lgconN = 0;
       	ph[k] = dnorm(_zi[j], mn, sqrt(_sig2h[k]), 1) +
       		    	log((double) nh[k]) + // cohesion part
       		        lgcatY - lgcatN + // Categorical part only nonzero if PPMx=TRUE
       				lgconY - lgconN;  // Continuous part only nonzero if PPMx=TRUE
-      
-      
-      
+
+
+
       	if(*calibrate == 2){
       		ph[k] = dnorm(_zi[j], mn, sqrt(_sig2h[k]), 1) +
       	            	log((double) nh[k]) +
@@ -759,22 +759,22 @@ void ordinal_ppmx_missing(
       	if(*cohesion==2){
       		ph[k] = ph[k] - log((double) nh[k]);
       	}
-      
-      
+
+
       }
 
 
       // Need to consider allocating subject to new cluster
       mudraw = rnorm(_mu0, sqrt(_sig20));
       sdraw = runif(smin, smax);
-      
+
       lgcondraw = 0.0;
       lgcatdraw = 0.0;
       if(!(*PPM)){
-        
+
         // similarity for continuous covariate
         for(p=0;p<(*ncon);p++){
-        
+
           if(Mcon[j*(*ncon)+p] == 0){
             xcontmp = Xcon[j*(*ncon)+p];
             if(*similarity_function==1){ // Auxilliary
@@ -805,16 +805,16 @@ void ordinal_ppmx_missing(
           if(*similarity_function==4){ // Dissimilarity
             lgcondraw = -(alpha)*0;
           }
-          
+
         }
         // similarity for categorical covariate
         for(p=0;p<(*ncat);p++){
           for(c=0;c<Cvec[p];c++){nhctmp[c] = 0;}
-          
+
           if(Mcat[j*(*ncat)+p] == 0){ // only consider this if observation is not missing.
             nhctmp[Xcat[j*(*ncat)+p]] = 1;
-          
-          
+
+
             if(*similarity_function==1){
               lgcatt = gsimcatDM(nhctmp, dirweights, Cvec[p], 0, 1);
           	  lgcatdraw = lgcatdraw + lgcatt;
@@ -826,9 +826,9 @@ void ordinal_ppmx_missing(
             if(*similarity_function==3){
           	  lgcatdraw = lgcatdraw + -(alpha)*0;
             }
-        
+
           }
-        
+
           if(*similarity_function==4){
             lgcatdraw = -(alpha)*0;
           }
@@ -836,29 +836,29 @@ void ordinal_ppmx_missing(
         gtilY[_nclus] = lgcondraw + lgcatdraw;
         gtilN[_nclus] = lgcondraw + lgcatdraw;
       } // THIS ENDS THE PPMX PART.
-      
+
       mn = mudraw;
       if(*meanModel == 2) mn = mudraw + xb;
-      
-      // Note that if PPMx = FALSE, then 
+
+      // Note that if PPMx = FALSE, then
       // lgcondraw = lgcondraw =  0;
-      
-      
+
+
       ph[_nclus] = dnorm(_zi[j],mn,sdraw,1) +
                        	log(Mdp) +
                        	lgcondraw +
                        	lgcatdraw;
-      
+
       if(*calibrate==2){
       	ph[_nclus] = dnorm(zi[j],mn,sdraw,1) +
       	                 	log(Mdp) +
       	                 	(1/((double)*ncon + (double)*ncat))*(lgcondraw + lgcatdraw);
       }
-      
+
       if(*cohesion==2){
       	ph[_nclus] = ph[_nclus] - log(Mdp);
       }
-      
+
       /////////////////////////////////////////////////////////////////////////////
       // This is the calibration used when the similarity is normalized
       /////////////////////////////////////////////////////////////////////////////
@@ -866,58 +866,58 @@ void ordinal_ppmx_missing(
         maxgtilN = gtilN[0];
       	maxgtilY = gtilY[0];
       	for(k=1; k < _nclus+1; k++){
-      
+
       	  if(maxgtilN < gtilN[k]) maxgtilN = gtilN[k];
-      
+
       	  if(k < _nclus){
       	    if(maxgtilY < gtilY[k]) maxgtilY = gtilY[k];
       	  }
       	}
-      
+
       	sgY=0.0;
       	sgN=0.0;
       	for(k=0; k<_nclus+1; k++){
-      
+
       	  lgtilN[k] = gtilN[k] - maxgtilN;
       	  sgN = sgN + exp(lgtilN[k]);
-      
+
       	  if(k < _nclus){// If x is included in an existing cluster in cannot be a singleton
       	    lgtilY[k] = gtilY[k] - maxgtilY;
       	    sgY = sgY + exp(lgtilY[k]);
       	  }
       	}
-      
+
       	// Calibrate the unnormalized cluster probabilities
       	for(k=0; k<_nclus; k++){
       		lgtilNk = lgtilN[k] - log(sgN);
       		lgtilYk = lgtilY[k] - log(sgY);
-      
+
       		mn = _muh[k];
       		if(*meanModel == 2) mn = _muh[k] + xb;
-      
+
       		ph[k] = dnorm(_zi[j], mn, sqrt(_sig2h[k]), 1) +
               	    	log((double) nh[k]) +  // Cohesion part
       				    lgtilYk - lgtilNk; //This takes into account both cont and cat vars
-      
+
       		if(*cohesion==2){
       	    	ph[k] = ph[k] - log((double) nh[k]);
           	}
-      
+
       	}
-      
+
       	// calibration for a singleton
       	mn = mudraw;
       	if(*meanModel == 2) mn = mudraw + xb;
-      
+
       	ph[_nclus] = dnorm(_zi[j],mn,sdraw,1) +
                        	    log(Mdp) +
       					    lgtilN[_nclus] - log(sgN);
-      
+
       	if(*cohesion==2){// Note with a uniform cohesion, for a new cluster
       	                 // the value of log(c({nclus_iter}}) = log(1) = 0;
       		ph[_nclus] = ph[_nclus] - log(Mdp);
       	}
-      
+
       }
       /////////////////////////////////////////////////////////////////////////////
       // End of calibration used when the similarity is normalized
@@ -928,20 +928,20 @@ void ordinal_ppmx_missing(
       for(k = 1; k < _nclus+1; k++){
       	if(maxph < ph[k]) maxph = ph[k];
       }
-      
+
       denph = 0.0;
       for(k = 0; k < _nclus+1; k++){
       	ph[k] = exp(ph[k] - maxph);
       	denph = denph + ph[k];
       }
-      
+
       for(k = 0; k < _nclus+1; k++){
       	probh[k] = ph[k]/denph;
       }
-      
+
 
       uu = runif(0.0,1.0);
-      
+
       cprobh= 0.0;
       iaux = _nclus+1;
       for(k = 0; k < _nclus+1; k++){
@@ -951,19 +951,19 @@ void ordinal_ppmx_missing(
       		break;
       	}
       }
-      
-      
+
+
       if(iaux <= _nclus){
-      
+
       	_Si[j] = iaux;
       	nh[_Si[j]-1] = nh[_Si[j]-1] + 1;
-      
+
       }else{
-      
+
       	_nclus = _nclus + 1;
       	_Si[j] = _nclus;
       	nh[_Si[j]-1] = 1;
-      
+
       	_muh[_Si[j]-1] = mudraw;
       	_sig2h[_Si[j]-1] = sdraw*sdraw;
       }
@@ -977,14 +977,14 @@ void ordinal_ppmx_missing(
             nhx[(_Si[j]-1)*(*ncon) + p] = nhx[(_Si[j]-1)*(*ncon) + p] + 1;
           }
         }
-        // need to now add the xcat to the cluster to which it was assigned; 
+        // need to now add the xcat to the cluster to which it was assigned;
         for(p = 0; p < *ncat; p++){
           if(Mcat[j*(*ncat)+p] == 0){
-            nhc[((_Si[j]-1)*(*ncat) + p)*(max_C) + Xcat[j*(*ncat)+p]] = 
+            nhc[((_Si[j]-1)*(*ncat) + p)*(max_C) + Xcat[j*(*ncat)+p]] =
                nhc[((_Si[j]-1)*(*ncat) + p)*(max_C) + Xcat[j*(*ncat)+p]] + 1;
           }
         }
-      } 
+      }
 
 
       if((i >= (*burn)) & ((i) % *thin ==0)){
@@ -996,30 +996,30 @@ void ordinal_ppmx_missing(
         sdens = 0.0;
         for(k = 0; k < _nclus; k++){
       	  s2tmp = _sig2h[k];
-      
+
       	  mn = _muh[k];
       	  if(*meanModel==2) mn = _muh[k] + xb;
-      
+
       	  sdens = sdens + probh[k]*(pnorm(co[y[j]+1], mn, sqrt(s2tmp), 1, 0) -
       				                pnorm(co[y[j]],   mn, sqrt(s2tmp), 1, 0));
         }
-      
-      
+
+
         mn = mudraw;
         if(*meanModel==2) mn = mudraw + xb;
-      
+
         sdens = sdens + probh[_nclus]*(pnorm(co[y[j]+1], mn, sdraw, 1, 0) -
       					               pnorm(co[y[j]],   mn, sdraw, 1, 0));
-      
+
         _like[j] = sdens;
-      
-      
+
+
       	// These are needed for WAIC
       	mnlike[j] = mnlike[j] + (_like[j])/(double) nout;
       	mnllike[j] = mnllike[j] + log(_like[j])/(double) nout;
-      
+
       	CPOinv[j] = CPOinv[j] + (1/(double) nout)*(1/_like[j]);
-      } 
+      }
 
     }
 
@@ -1037,7 +1037,7 @@ void ordinal_ppmx_missing(
 
 
     for(j = 0; j < *nobs; j++){
-    
+
 //      Rprintf("j = %d\n", j);
       if(*meanModel==1){
         mn = _muh[_Si[j]-1];
@@ -1049,7 +1049,7 @@ void ordinal_ppmx_missing(
         }
         mn =  _muh[_Si[j]-1] + xb;
       }
-      
+
       _zi[j] = rtnorm(mn, sqrt(_sig2h[_Si[j]-1]), co[y[j]], co[y[j]+1]);
 //      _zi[j] = r_truncnorm(co[y[j]], co[y[j]+1], _muh[_Si[j]-1], sqrt(_sig2h[_Si[j]-1]));
 
@@ -1062,7 +1062,7 @@ void ordinal_ppmx_missing(
       if(*meanModel==2){
         sumz[_Si[j]-1] = sumz[_Si[j]-1] + (_zi[j] - xb);
         sumz2[_Si[j]-1] = sumz2[_Si[j]-1] + (_zi[j] - xb)*(_zi[j] - xb);
-      
+
       }
     }
 
@@ -1075,18 +1075,18 @@ void ordinal_ppmx_missing(
     for(k = 0; k < _nclus; k++){
       osig = sqrt(_sig2h[k]);
       nsig = rnorm(osig,csigSIG);
-      
+
       if((nsig > 0) & (nsig < smax)){
-        
+
         llo = -(nh[k])*log(osig) - 1/(2*osig*osig)*(sumz2[k] - 2*_muh[k]*sumz[k] + nh[k]*_muh[k]*_muh[k]);
         lln = -(nh[k])*log(nsig) - 1/(2*nsig*nsig)*(sumz2[k] - 2*_muh[k]*sumz[k] + nh[k]*_muh[k]*_muh[k]);
-        
+
         llo = llo + dunif(osig, smin, smax, 1);
         lln = lln + dunif(nsig, smin, smax, 1);
-        
+
         llr = lln - llo;
         uu = runif(0,1);
-        
+
         if(log(uu) < llr){
         	_sig2h[k] = nsig*nsig;
         }
@@ -1102,13 +1102,13 @@ void ordinal_ppmx_missing(
     //////////////////////////////////////////////////////////////////////////////////
     summu = 0.0, summu2=0.0;
     for(k = 0; k < _nclus; k++){
-    
+
       s2star = 1/((double) nh[k]/_sig2h[k] + 1/_sig20);
       mstar = s2star*( (1/_sig2h[k])*sumz[k] + (1/_sig20)*_mu0);
 
       _muh[k] = rnorm(mstar, sqrt(s2star));
-      
-      summu = summu + _muh[k];  // This is used in the updating of mu0 and sig20 
+
+      summu = summu + _muh[k];  // This is used in the updating of mu0 and sig20
       summu2 = summu2 + _muh[k]*_muh[k];  // This is used in the updating of sig20
     }
 
@@ -1117,12 +1117,12 @@ void ordinal_ppmx_missing(
     // Update mu0  prior mean of muh
     //
     //////////////////////////////////////////////////////////////////////////////////////
-    
+
     s2star = 1/(((double) _nclus/_sig20) + (1/s2));
     mstar = s2star*((1/_sig20)*summu + (1/s2)*m);
-    
+
     _mu0 = rnorm(mstar, sqrt(s2star));
-    
+
     //////////////////////////////////////////////////////////////////////////////////////
     //
     // Update sig20  prior variance of muh
@@ -1134,20 +1134,20 @@ void ordinal_ppmx_missing(
 
       llo = -(_nclus)*log(os0) - 1/(2*os0*os0)*(summu2 - 2*_mu0*summu + _nclus*_mu0*_mu0);
       lln = -(_nclus)*log(ns0) - 1/(2*ns0*ns0)*(summu2 - 2*_mu0*summu + _nclus*_mu0*_mu0);
-      
+
       llo = llo + dunif(os0, s0min, s0max, 1);
       lln = lln + dunif(ns0, s0min, s0max, 1);
-      
+
       llr = lln - llo;
       uu = runif(0,1);
-      
+
       if(log(uu) < llr){
       	_sig20 = ns0*ns0;
       }
-    
+
     }
-    
-    
+
+
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     //
@@ -1155,27 +1155,27 @@ void ordinal_ppmx_missing(
     //
     ////////////////////////////////////////////////////////////////////////////////////////////
     if((i >= (*burn)) & ((i) % *thin ==0)){
-      
+
       for(j = 0; j < *nobs; j++){
-        
+
         mn = _muh[_Si[j]-1];
         if(*meanModel == 2){
           xb = 0.0;
           for(b = 0; b < ncov; b++){
             xb = xb + fullXmat[j*ncov+b]*_beta[b];
           }
-          
+
           mn = _muh[_Si[j]-1] + xb;
         }
-  
-  
+
+
         _ispred[j] = rnorm(mn, sqrt(_sig2h[_Si[j]-1]));
-        
+
         for(c=0; c < *nordcat-1; c++){
           if((_ispred[j] > co[c]) & (_ispred[j] < co[c+1])) _isordpred[j] = c;
         }
-  
-  
+
+
       }
     }
 
@@ -1184,23 +1184,23 @@ void ordinal_ppmx_missing(
     // out of sample prediction using posterior predictive?
     //
     ////////////////////////////////////////////////////////////////////////////////////////////
-    
+
     if((i >= (*burn)) & ((i) % *thin ==0)){
-    
+
       for(pp = 0; pp < *npred; pp++){
-      
+
         for(k = 0; k < _nclus; k++){
-      
+
       	  lgconN=0.0, lgconY=0.0;
       	  lgcatY=0.0, lgcatN=0.0;
-        
+
       	  if(!(*PPM)){
-      	  	
+
       	    for(p=0; p<(*ncon); p++){
               sumxtmp = sumx[k*(*ncon) + p];
               sumx2tmp = sumx2[k*(*ncon) + p];
               nhxtmp = nhx[k*(*ncon) + p];
-          
+
       	  	  if(*similarity_function==1){
       	  	    if(*consim==1){
       	  	      lgcont = gsimconNN(m0, v, s20, sumxtmp, sumx2tmp, mnmle[p], nhxtmp, 0, 0, 1);
@@ -1225,14 +1225,14 @@ void ordinal_ppmx_missing(
       	  	    lgcont = gsimconEV(sumxtmp, sumx2tmp, nhxtmp, alpha, 1);
       	  	  	lgconN = lgconN + lgcont;
       	  	  }
-          
+
       	  	  // now add ppth prediction to cluster;
       	  	  if(Mconp[pp*(*ncon)+p] == 0){
       	  	    sumxtmp = sumxtmp + Xconp[pp*(*ncon)+p];
       	  	    sumx2tmp = sumx2tmp + Xconp[pp*(*ncon)+p]*Xconp[pp*(*ncon)+p];
       	  	    nhxtmp = nhxtmp + 1;
               }
-              
+
       	  	  if(*similarity_function==1){ // Auxilliary
       	  	  	if(*consim==1){
       	  	      lgcont = gsimconNN(m0, v, s20, sumxtmp, sumx2tmp, mnmle[p], nhxtmp, 0, 0, 1);
@@ -1258,15 +1258,15 @@ void ordinal_ppmx_missing(
       	  	    lgconY = lgconY + lgcont;
       	  	  }
       	  	} // This ends the loop through ncon continuous covariates
-        
-        
+
+
       	  	for(p=0; p<(*ncat); p++){
-        
+
               for(c = 0; c < max_C; c++){
                 nhctmp[c] = nhc[(k*(*ncat) + p)*(max_C) + c];
               }
-          
-          
+
+
       	  	  if(*similarity_function==1){
       	  	    lgcatt = gsimcatDM(nhctmp, dirweights, Cvec[p], 0, 1);
       	  	  	lgcatN = lgcatN + lgcatt;
@@ -1287,12 +1287,12 @@ void ordinal_ppmx_missing(
                 }
                 lgcatN = lgcatN + -(alpha)*lgcatt;
       	  	  }
-          
+
               // include the categorical covariate in the kth cluster
               if(Mcatp[pp*(*ncat)+p] == 0){
       	  	    nhctmp[Xcatp[pp*(*ncat)+p]] = nhctmp[Xcatp[pp*(*ncat)+p]] + 1;
               }
-          
+
       	  	  if(*similarity_function==1){
       	  	    lgcatt = gsimcatDM(nhctmp, dirweights, Cvec[p], 0, 1);
       	  	    lgcatY = lgcatY + lgcatt;
@@ -1313,13 +1313,13 @@ void ordinal_ppmx_missing(
                 }
                 lgcatY = lgcatY + -(alpha)*lgcatt;
       	  	  }
-        
+
       	  	} // This ends the loop through ncat categorical covariates
-        
+
       	  	// These are for calibration 1
       	    gtilY[k] = lgconY + lgcatY;
       	    gtilN[k] = lgconN + lgcatN;
-        
+
            	//////////////////////////////////////////////////////////
       	   	// Gower Compute similarity values for gower dissimilarity
       	   	//////////////////////////////////////////////////////////
@@ -1329,9 +1329,9 @@ void ordinal_ppmx_missing(
               lgconN = 0.0;
               for(j = 0; j < *nobs; j++){
                 if(_Si[j] == k+1){
-                
+
                   lgconY = lgconY + dissimtt[pp*(*nobs) + j];
-                
+
                   for(jj = 0; jj < j; jj++){
                     if(_Si[jj] == k+1){
                       lgconN = lgconN + dissimtn[j*(*nobs) + jj];
@@ -1340,15 +1340,15 @@ void ordinal_ppmx_missing(
                   }
                 }
               }
-              
+
               npdN = nh[k]*(nh[k]-1)/2;
               if(npdN==0)npdN=1;
               npdY = (nh[k]+1)*(nh[k])/2;
-              
+
               // This is cluster-mean Gower dissimilarity, but the next is used
               lgconN = -(alpha)*lgconN/(npdN);
               lgconY = -(alpha)*lgconY/(npdY);
-              
+
               // Just Use the cluster-total Gower dissimilarity
               lgconN = -(alpha)*lgconN;
               lgconY = -(alpha)*lgconY;
@@ -1356,29 +1356,29 @@ void ordinal_ppmx_missing(
             //////////////////////////////////////////////////////////
       	   	// End of Gower similarity values for gower dissimilarity
       	   	//////////////////////////////////////////////////////////
-        
+
       	  } // THIS ENDS THE PPMX PART
-      	  	
-      	  // Note that if PPMx = FALSE, then 
+
+      	  // Note that if PPMx = FALSE, then
       	  // lgcatY = lgcatN = lgconY = lgconN = 0;
-      	  	
+
       	  ph[k] = log((double) nh[k]) +
       	       	 	lgcatY - lgcatN +
       	  			lgconY - lgconN;
-        
+
       	  if(*calibrate == 2){
-        
+
       	  	ph[k] = log((double) nh[k]) +
       	  	            (1/((double)*ncon + (double)*ncat))*
       	  	            (lgcatY + lgconY - lgcatN - lgconN);
       	  }
-        
+
           if(*cohesion==2) ph[k] =  ph[k] - log((double) nh[k]);
         } // This ends loop through existing clusters.
-      
-  
-  
-      	// Now evaluate probability of new subject being assigned to own cluster            
+
+
+
+      	// Now evaluate probability of new subject being assigned to own cluster
         lgcondraw = 0.0;
         lgcatdraw = 0.0;
         if(!(*PPM)){
@@ -1405,15 +1405,15 @@ void ordinal_ppmx_missing(
                 lgcondraw = lgcondraw + gsimconEV(xcontmp,xcontmp*xcontmp,1,alpha,1);
               }
             }
-          
+
           }
-          
+
           for(p=0;p<(*ncat);p++){
             for(c=0;c<Cvec[p];c++){nhctmp[c] = 0;}
-            
+
             if(Mcatp[pp*(*ncat)+p] == 0){
               nhctmp[Xcatp[pp*(*ncat)+p]] = 1;
-          
+
           	  if(*similarity_function==1){
           	    lgcatdraw = lgcatdraw + gsimcatDM(nhctmp, dirweights, Cvec[p], 0, 1);
           	  }
@@ -1427,70 +1427,70 @@ void ordinal_ppmx_missing(
           }
           gtilY[_nclus] = lgcatdraw + lgcondraw;
           gtilN[_nclus] = lgcatdraw + lgcondraw;
-          
+
         }
-      		
+
       	// Note if PPMx = FALSE, then logcon0 = lgcat0 = 0;
       	ph[_nclus] = log((double) Mdp) + lgcondraw + lgcatdraw;
-      
+
       	// Gower similarity
       	if(*similarity_function==4) ph[_nclus] = log((double) Mdp) + log(1);
-      
+
       	// Calibration through coarsening
       	if(*calibrate==2){
       		ph[_nclus] = log(Mdp) +
       							(1/((double)*ncon + (double)*ncat))*(lgcondraw + lgcatdraw);
       	}
-      
+
       	// The uniform cohesion
       	if(*cohesion==2) ph[_nclus] = ph[_nclus] - log((double) Mdp);
-      
-      
+
+
       	//////////////////////////////////////////////////////////////////////////
       	// This is the calibration used when the similarity is standardized by
       	//////////////////////////////////////////////////////////////////////////
-      
+
         if((*calibrate==1) & (*PPM != 1)){
-          
+
           maxgtilN = gtilN[0];
           maxgtilY = gtilY[0];
           for(k=1; k < _nclus+1; k++){
             if(maxgtilN < gtilN[k]) maxgtilN = gtilN[k];
-            
+
             if(k < _nclus){
               if(maxgtilY < gtilY[k]) maxgtilY = gtilY[k];
             }
           }
-          
-          
+
+
           sgY=0.0;
           sgN=0.0;
-          
+
           for(k=0; k<_nclus+1; k++){
-            
+
             lgtilN[k] = gtilN[k] - maxgtilN;
             sgN = sgN + exp(lgtilN[k]);
-            
+
             if(k < _nclus){
               lgtilY[k] = gtilY[k] - maxgtilY;
               sgY = sgY + exp(lgtilY[k]);
             }
           }
-          
-          
+
+
           for(k=0; k<_nclus; k++){
             lgtilNk = lgtilN[k] - log(sgN);
             lgtilYk = lgtilY[k] - log(sgY);
-            
+
             ph[k] = log((double) nh[k]) + lgtilYk - lgtilNk; //This takes into account both cont and cat vars
-            
+
             if(*cohesion==2){
               ph[k] = ph[k] - log((double) nh[k]);
             }
           }
           // calibration for a singleton
           ph[_nclus] =  log(Mdp) + lgtilN[_nclus] - log(sgN);
-          
+
           if(*cohesion==2){// Note with a uniform cohesion, for a new cluster
                            // the value of log(c({_nclus}}) = log(1) = 0;
            	ph[_nclus] = ph[_nclus] - log(Mdp);
@@ -1499,27 +1499,27 @@ void ordinal_ppmx_missing(
       	//////////////////////////////////////////////////////////////////////////
       	// End of calibration used when the similarity is standardized by
       	//////////////////////////////////////////////////////////////////////////
-              
-              
+
+
         maxph = ph[0];
         for(k = 1; k < _nclus+1; k++){
           if(ph[k] > maxph) maxph=ph[k];
         }
-        
+
         denph = 0.0;
         for(k = 0; k < _nclus+1; k++){
           ph[k] = exp(ph[k] - maxph);
           denph = denph + ph[k];
         }
-        
+
         for(k = 0; k < _nclus+1; k++){
           probh[k] = ph[k]/denph;
         }
-        
+
         uu = runif(0.0,1.0);
-        
+
         cprobh= 0.0;
-        
+
         iaux = _nclus+1;
         for(k = 0; k < _nclus+1; k++){
           cprobh = cprobh + probh[k];
@@ -1528,10 +1528,10 @@ void ordinal_ppmx_missing(
             break;
           }
         }
-        
+
         mudraw = rnorm(_mu0, sqrt(_sig20));
         sdraw = runif(smin, smax);
-       
+
         if(iaux <= _nclus){
           mudraw = _muh[(iaux-1)];
           sdraw = sqrt(_sig2h[(iaux-1)]);
@@ -1539,7 +1539,7 @@ void ordinal_ppmx_missing(
           mudraw = rnorm(_mu0,sqrt(_sig20));
           sdraw = runif(smin, smax);
         }
-        
+
         mn = mudraw;
         if(*meanModel==2){ // This needs to be updated.
           xb = 0.0;
@@ -1548,19 +1548,19 @@ void ordinal_ppmx_missing(
           }
           mn = mudraw + xb;
         }
-        
+
         _ppred[pp] = rnorm(mn, sdraw);
         _predclass[pp] = iaux;
-        
+
         mn = 0.0;
         for(k = 0; k < _nclus; k++){
           if(*meanModel == 1) mn = mn +  _muh[k]*probh[k];
           if(*meanModel == 2) mn = mn +  (_muh[k] + xb)*probh[k];
         }
-        
+
         if(*meanModel == 1) mn = mn + rnorm(_mu0,sqrt(_sig20))*probh[_nclus];
         if(*meanModel == 2) mn = mn + rnorm(_mu0+xb,sqrt(_sig20))*probh[_nclus];
-        
+
         _rbpred[pp] = mn;
 
 
@@ -1569,7 +1569,7 @@ void ordinal_ppmx_missing(
           if((_ppred[pp] > co[c]) & (_ppred[pp] < co[c+1])) _ordppred[pp] = c;
           if((_rbpred[pp] > co[c]) & (_rbpred[pp] < co[c+1])) _rbordpred[pp] = c;
         }
-        
+
       }
     }
 
@@ -1582,39 +1582,39 @@ void ordinal_ppmx_missing(
 
       mu0[ii] = _mu0;
       sig20[ii] = _sig20;
-      nclus[ii] = _nclus;      
+      nclus[ii] = _nclus;
 
       for(j=0; j<*nobs; j++){
         mu[ii + nout*j] = _muh[_Si[j]-1];
         sig2[ii + nout*j] = _sig2h[_Si[j]-1];
-        
+
         Si[ii + nout*j] = _Si[j];
         zi[ii + nout*j] = _zi[j];
 
-        
+
         like[ii + nout*j] = _like[j];
         ispred[ii + nout*j] = _ispred[j];
         isordpred[ii + nout*j] = _isordpred[j];
-        
+
       }
 
       for(b = 0; b < ncov; b++){
         beta[ii + nout*b] = _beta[b];
-      }      
-      
+      }
+
       for(pp = 0; pp < *npred; pp++){
         ppred[ii + nout*pp] = _ppred[pp];
         predclass[ii + nout*pp] = _predclass[pp];
 		ordppred[ii + nout*pp] = _ordppred[pp];
-        
+
         rbpred[ii + nout*pp] = _rbpred[pp];
         rbordpred[ii + nout*pp] = _rbordpred[pp];
 
       }
-      
+
       ii = ii + 1;
     }
-  
+
   }
 
 
@@ -1626,7 +1626,7 @@ void ordinal_ppmx_missing(
     _lpml = _lpml + log(1/CPOinv[j]);
   }
   lpml[0] = _lpml;
-  
+
   ////////////////////////////////////////////////////////////////////////////////////////////
   // Computing WAIC  (see Gelman article in lit review folder)
   ////////////////////////////////////////////////////////////////////////////////////////////
@@ -1635,22 +1635,22 @@ void ordinal_ppmx_missing(
     elppdWAIC = elppdWAIC + (2*mnllike[j] - log(mnlike[j]));
   }
   waic[0] = -2*elppdWAIC;
-  
+
 
 
 
 }
 
 
-SEXP ORDINAL_PPMX_MISSING(SEXP y, SEXP co, SEXP nobs, SEXP nordcat, 
+SEXP ORDINAL_PPMX_MISSING(SEXP y, SEXP co, SEXP nobs, SEXP nordcat,
                            SEXP Xcon, SEXP Mcon, SEXP ncon,
-                           SEXP Xcat, SEXP Mcat, SEXP ncat, SEXP Cvec, 
+                           SEXP Xcat, SEXP Mcat, SEXP ncat, SEXP Cvec,
                            SEXP npred,
-                           SEXP Xconp, SEXP Mconp, 
+                           SEXP Xconp, SEXP Mconp,
                            SEXP Xcatp, SEXP Mcatp,
                            SEXP M, SEXP meanModel, SEXP modelPriors, SEXP simParms,
                            SEXP PPM, SEXP cohesion, SEXP similarity_function, SEXP consim,
-                           SEXP dissimtn, SEXP dissimtt, SEXP calibrate, SEXP mh, 
+                           SEXP dissimtn, SEXP dissimtt, SEXP calibrate, SEXP mh,
                            SEXP verbose, SEXP draws, SEXP burn, SEXP thin){
   int nprot = 0;
   int _nobs = asInteger(nobs);
@@ -1666,17 +1666,17 @@ SEXP ORDINAL_PPMX_MISSING(SEXP y, SEXP co, SEXP nobs, SEXP nordcat,
   int _consim = asInteger(consim);
   int _calibrate = asInteger(calibrate);
   int _verbose = asInteger(verbose);
-  
+
   int _niter = asInteger(draws);
   int _nburn = asInteger(burn);
   int _nthin = asInteger(thin);
-  
+
   double _M = asReal(M);
-  
+
 
   double nout = (_niter-_nburn)/_nthin;
   double ncov = _ncon + _ncat;
-  
+
   y = PROTECT(coerceVector(y, INTSXP)); nprot++;
   co = PROTECT(coerceVector(co, REALSXP)); nprot++;
   Xcon =  PROTECT(coerceVector(Xcon, REALSXP)); nprot++;
@@ -1691,15 +1691,15 @@ SEXP ORDINAL_PPMX_MISSING(SEXP y, SEXP co, SEXP nobs, SEXP nordcat,
   modelPriors = PROTECT(coerceVector(modelPriors, REALSXP)); nprot++;
   simParms = PROTECT(coerceVector(simParms, REALSXP)); nprot++;
   mh = PROTECT(coerceVector(mh, REALSXP)); nprot++;
-  
+
   dissimtn  = PROTECT(coerceVector(dissimtn, REALSXP)); nprot++;
   dissimtt  = PROTECT(coerceVector(dissimtt, REALSXP)); nprot++;
-  
-  SEXP Si = PROTECT(allocMatrix(INTSXP, nout, _nobs)); nprot++; 
+
+  SEXP Si = PROTECT(allocMatrix(INTSXP, nout, _nobs)); nprot++;
   SEXP MU = PROTECT(allocMatrix(REALSXP, nout, _nobs)); nprot++;
-  SEXP SIG2 = PROTECT(allocMatrix(REALSXP, nout, _nobs)); nprot++; 
-  SEXP BETA = PROTECT(allocMatrix(REALSXP, nout, ncov)); nprot++; 
-  SEXP Zi = PROTECT(allocMatrix(REALSXP, nout, _nobs)); nprot++; 
+  SEXP SIG2 = PROTECT(allocMatrix(REALSXP, nout, _nobs)); nprot++;
+  SEXP BETA = PROTECT(allocMatrix(REALSXP, nout, ncov)); nprot++;
+  SEXP Zi = PROTECT(allocMatrix(REALSXP, nout, _nobs)); nprot++;
   SEXP NCLUS = PROTECT(allocMatrix(INTSXP, nout, 1)); nprot++;
   SEXP MU0 = PROTECT(allocMatrix(REALSXP, nout, 1)); nprot++;
   SEXP SIG20 = PROTECT(allocMatrix(REALSXP, nout, 1)); nprot++;
@@ -1711,15 +1711,15 @@ SEXP ORDINAL_PPMX_MISSING(SEXP y, SEXP co, SEXP nobs, SEXP nordcat,
   SEXP RBPRED = PROTECT(allocMatrix(REALSXP, nout, _npred)); nprot++;
   SEXP ORDRBPRED = PROTECT(allocMatrix(INTSXP, nout, _npred)); nprot++;
   SEXP PREDCLASS = PROTECT(allocMatrix(INTSXP, nout, _npred)); nprot++;
- 
+
   SEXP LIKE = PROTECT(allocMatrix(REALSXP, nout, _nobs)); nprot++;
   SEXP WAIC = PROTECT(Rf_allocVector(REALSXP, 1)); nprot++;
   SEXP LPML = PROTECT(Rf_allocVector(REALSXP, 1)); nprot++;
 
   double *MUout, *SIG2out, *MU0out, *SIG20out, *BETAout, *Ziout, *LIKEout, *WAICout, *LPMLout;
   double *ISPREDout, *PPREDout, *RBPREDout;
-  int *Siout, *NCLUSout, *PREDCLASSout, *ISORDPREDout, *ORDPPREDout, *ORDRBPREDout;  
-  
+  int *Siout, *NCLUSout, *PREDCLASSout, *ISORDPREDout, *ORDPPREDout, *ORDRBPREDout;
+
   MUout = REAL(MU);
   SIG2out = REAL(SIG2);
   MU0out = REAL(MU0);
@@ -1728,7 +1728,7 @@ SEXP ORDINAL_PPMX_MISSING(SEXP y, SEXP co, SEXP nobs, SEXP nordcat,
   BETAout = REAL(BETA);
   Siout = INTEGER(Si);
   NCLUSout = INTEGER(NCLUS);
-  
+
   LIKEout = REAL(LIKE);
   WAICout = REAL(WAIC);
   LPMLout = REAL(LPML);
@@ -1746,18 +1746,18 @@ SEXP ORDINAL_PPMX_MISSING(SEXP y, SEXP co, SEXP nobs, SEXP nordcat,
   GetRNGstate();
 
   ordinal_ppmx_missing(INTEGER(y), REAL(co), &_nobs, &_nordcat,
-                REAL(Xcon), INTEGER(Mcon), &_ncon, 
-                INTEGER(Xcat), INTEGER(Mcat), &_ncat, INTEGER(Cvec), 
+                REAL(Xcon), INTEGER(Mcon), &_ncon,
+                INTEGER(Xcat), INTEGER(Mcat), &_ncat, INTEGER(Cvec),
                 &_npred,
                 REAL(Xconp), INTEGER(Mconp),
                 INTEGER(Xcatp), INTEGER(Mcatp),
                 &_M, &_meanModel, REAL(modelPriors), REAL(simParms),
-                &_PPM, &_cohesion, &_similarity_function, &_consim, 
-                REAL(dissimtn), REAL(dissimtt), &_calibrate, REAL(mh), 
-                &_verbose, &_niter, &_nburn, &_nthin, 
+                &_PPM, &_cohesion, &_similarity_function, &_consim,
+                REAL(dissimtn), REAL(dissimtt), &_calibrate, REAL(mh),
+                &_verbose, &_niter, &_nburn, &_nthin,
                 Siout, NCLUSout, MUout, SIG2out, BETAout, Ziout,
-                MU0out, SIG20out, 
-                LIKEout, WAICout, LPMLout, 
+                MU0out, SIG20out,
+                LIKEout, WAICout, LPMLout,
                 ISPREDout, ISORDPREDout, PPREDout, ORDPPREDout, PREDCLASSout,
                 RBPREDout, ORDRBPREDout);
 

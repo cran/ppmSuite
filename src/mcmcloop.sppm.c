@@ -121,7 +121,7 @@ void mcmc_sppm(int *draws, int *burn, int *thin, int *nobs, int *npred, int *coh
 	double sig20_iter=modelPriors[3]*0.5, mu0_iter=0.0;
 	int nclus_iter = 0;
 
-	int iaux;
+	int iaux=1;
 
 
 	int Si_iter[*nobs];
