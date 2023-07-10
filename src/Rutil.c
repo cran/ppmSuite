@@ -1784,6 +1784,3 @@ double r_truncnorm(double a, double b, double mean, double sd) {
     }
   }
 }
-
-
-

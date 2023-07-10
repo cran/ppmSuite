@@ -25,8 +25,16 @@
 
 // inputs
 // y - data vector
-// n - length of y
-// N - number of mixture components
+// nobs - length of y
+// Xcon - nobs * ncon matrix containing continuous covariates
+// Xcat - nobs * ncat matrix containing catergorical covaraites
+// ncon - number of continuous covaraites (i.e., number of columns in Xcon)
+// ncat - number of categorical covariates (i.e., number of columns in Xcat)
+// Cvec - vector that indicates number of categories for each covariate in Xcat
+// Xconp - npred * ncon matrix containing continuous covariates to predict for new subjects
+// Xcatp - npred * ncat matrix containing categorical covariates to predict for new subjects
+// meanModel - binary variable indicating if global regression is included
+// modelPriors - vector containing prior parameter values
 // m - prior mean of the mean from mixture components
 // v - prior variance of the mean from mixture components
 // a - prior shape of the variance from mixture components
@@ -684,13 +692,6 @@ static void gaussian_ppmx(
       	// Compute the unnormalized cluster probabilities
       	// Note that if PPMx = FALSE then
       	// lgcatY = lgcatN = lgconY = lgconN = 0;
-//      	Rprintf("y[j] = %f\n", y[j]);
-//      	Rprintf("mn = %f\n", mn);
-//      	Rprintf("sqrt(_sig2h[k]) = %f\n", sqrt(_sig2h[k]));
-//      	Rprintf("dnorm(y[j], mn, sqrt(_sig2h[k]), 1) = %f\n", dnorm(y[j], mn, sqrt(_sig2h[k]), 1));
-//      	Rprintf("lgconY = %f\n", lgconY);
-//      	Rprintf("lgconN = %f\n", lgconN);
-//      	Rprintf("nh[k] = %d\n", nh[k]);
       	ph[k] = dnorm(y[j], mn, sqrt(_sig2h[k]), 1) +
       		    	log((double) nh[k]) + // cohesion part
       		        lgcatY - lgcatN + // Categorical part only nonzero if PPMx=TRUE
@@ -936,16 +937,8 @@ static void gaussian_ppmx(
 
         }
       }
-
-//      RprintIVecAsMat("Si", _Si, 1, *nobs);
-//      RprintIVecAsMat("nh", nh, 1, _nclus);
-//      Rprintf("nclus = %d\n", _nclus);
     }
 
-
-//    RprintIVecAsMat("Si", _Si, 1, *nobs);
-//    RprintIVecAsMat("nh", nh, 1, _nclus);
-//    Rprintf("nclus = %d\n", _nclus);
 
     //////////////////////////////////////////////////////////////////////////////////
     //
@@ -1067,14 +1060,6 @@ static void gaussian_ppmx(
       }
 
     }
-
-//    Rprintf("sig20 = %f\n", _sig20);
-
-
-
-//    Rprintf("meanModel = %d\n", *meanModel);
-
-//    RprintVecAsMat("Sstar", Sstar, ncov, ncov);
 
     //////////////////////////////////////////////////////////////////////////////////
     //

@@ -34,11 +34,8 @@
 * y2 = vector containing nobs frontal values for each subject
 * z = vector containing nobs time (time is incremented by one) values for each player
 
-* q = the degree of the b-spline or truncated polynomial spline
-* nknots = number of values in the preceding vector
-* knots = vector containing knot values (typically a uniform array of length 20-30)
-*			this vector is the same for all subjects
 * K = smoothing matrix for penalized B-splines.
+* dimK = dimension of K.
 
 * ncon = number of continuous covariates
 * ncat = number of categorical covariates
@@ -51,9 +48,8 @@
 * PPM = logical indicating if PPM or PPMx should be used.
 * M = double indicating value of M associated with cohesion (scale parameter of DP).
 
-* gcontype = int indicating similarity function for continuous variable
-* gcattype = int indicating similarity function for categorical variable
-	similarity - an integer indicating which similarity function to use
+* simularity_function = int indicating similarity function for both 
+                        continuous and categorical variable
 		1 - auxiliary model
 		2 - double dipper
 * consim = 1 or 2.  1 implies sim for con var is N-N.  2 implies sim is N-NIG
@@ -74,11 +70,11 @@
 void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
                                  int *nsubject, int *nobs, //2
                                  double *y1, double *y2, double *z, //3
-                                 int *q, int *nknots, double *knots, double *K, //4
-                                 int *ncon, int *ncat,int *Cvec, //3
+                                 double *K, int *dimK, //2
+                                 int *ncon, int *ncat, int *Cvec, //3
                                  double *Xcon, int *Xcat, //2
                                  int *PPM, double *M,//2
-                                 int *gcontype, int *gcattype, int *consim, //3
+                                 int *similarity_function, int *consim, //2
                                  int *npred, int *npredobs, double *Xconp, int *Xcatp, //4
                                  double *simParms, double *Aparm, //2
                                  int *calibrate, double *modelPriors, double *Hmat, //3
@@ -90,8 +86,6 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
                                  double *mu1,double *mu2, int *Si, int *nclus, //4
                                  double *ppred1,  double *ppred2, int *predclass, //3
                                  double *llike, double *lpml,double *WAIC){ //3
-
-
 
 
   // i - MCMC iterate
@@ -106,24 +100,20 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
   // kk - knot iterate
   // p - covariate iterate (for both continuous and categorical);
 
-  int c, i, ii, j, t, p, jj, k, kk, pp, b, bb;
-  int csobs = 0;
-  int nb, N ;
-
-  nb = *nknots + *q + 1;  //Number of B-spline basis my c function which is used internall
-                          //if data not balanced (i.e., balanced=0);
-  if(*balanced==1) nb = *nknots + *q;  //Number of B-spline basis cote;
+  int c, i, ii, j, t, p, jj, k, kk, b, bb;
+  int pp;
+  int csobs = 0, csHobs=0;
+  int nb= (*dimK), N ;
   int nout = (*draws - *burn)/(*thin);
 
   Rprintf("nsubject = %d\n", *nsubject);
-  Rprintf("nknots = %d\n", *nknots);
   Rprintf("nb = %d\n", nb);
   Rprintf("ncon = %d\n", *ncon);
   Rprintf("ncat = %d\n", *ncat);
 
-//  RprintIVecAsMat("nobs", nobs, 1, *nsubject);
- // RprintIVecAsMat("Cvec", Cvec, 1, *ncat);
-  //	RprintVecAsMat("knots", knots, *nknots, *nsubject);
+
+  // RprintIVecAsMat("nobs", nobs, 1, *nsubject);
+  if(*ncat > 0) RprintIVecAsMat("Cvec", Cvec, 1, *ncat);
 
 
   double *zpred = R_Vector(*npredobs);
@@ -144,13 +134,10 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
 
   }
 
-
   N = csobs;
-
 
   Rprintf("max_nobs = %d\n", max_nobs);
   Rprintf("N = %d\n", N);
-
 
   int max_C;
   max_C = Cvec[0];
@@ -160,9 +147,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
 
   if(*ncat == 0) max_C = 1.0;
 
-  Rprintf("max_C = %d\n", max_C);
-
-
+  // Rprintf("max_C = %d\n", max_C);
 
 
 
@@ -224,7 +209,8 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
   // Initialize Si according to covariates
   for(j = 0; j < *nsubject; j++){
     //		Si_iter[j] = x[j]*(*ncat2) + x2[j]+1;
-    Si_iter[j] = 1;
+    //Si_iter[j] = 1;
+    Si_iter[j] = rbinom(3,0.4)+1;
     nh[j] = 0;
   }
   // Initial enumeration of number of players per cluster;
@@ -239,59 +225,46 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
   }
 
 
-  Rprintf("nclus_iter = %d\n", nclus_iter);
-  //	RprintIVecAsMat("Si_iter", Si_iter, 1, *nsubject);
-  RprintIVecAsMat("nh", nh, 1, nclus_iter);
-
-
-  // ===================================================================================
-  //
-  // Initialize arrays of memory needed to update cluster assignments
-  //
-  // ===================================================================================
-
-  int nhc[(*nobs)*(*ncat)];
-
-  double* xcontmp = R_Vector(*nsubject);
-
-
 
   // ===================================================================================
   //
   // scratch vectors of memory needed to update parameters
   //
   // ===================================================================================
-
+  int  big = max_nobs;
+  if(nb > max_nobs) big = nb;
+  Rprintf("big = %d\n", big);
   // These are made particularly big to make sure there is enough memory
-  double *scr1 = R_Vector((max_nobs)*(max_nobs));
-  double *scr2 = R_Vector((max_nobs)*(max_nobs));
-  double *scr3 = R_Vector((max_nobs)*(max_nobs));
-  double *scr4 = R_Vector((max_nobs)*(max_nobs));
+  double *scr1 = R_Vector((big)*(big));
+  double *scr2 = R_Vector((big)*(big));
+  double *scr3 = R_Vector((big)*(big));
+  double *scr4 = R_Vector((big)*(big));
 
 
   // stuff that I need to update Si (cluster labels);
-  int iaux=1, nhtmp;
+  int iaux=1, auxint, nhctmp[max_C];
 
-  double auxt1, auxl1, auxth1, uu;
-  double auxt2, auxl2, auxth2;
+  double auxreal, uu, sumxtmp, sumx2tmp, xcontmp;
   double sumsq2, sumsq1, maxph, denph, cprobh;
   double lamdraw1, tau2draw1, lamdraw2, tau2draw2;
-  double sumx, sumx2, tmp;
 
   double *thetadraw1 = R_VectorInit(nb, 0.0);
   double *thetadraw2 = R_VectorInit(nb, 0.0);
 
   double *ph = R_VectorInit(*nsubject, 0.0);
-  double *phtmp = R_VectorInit(*nsubject, 0.0);
   double *probh = R_VectorInit(*nsubject, 0.0);
 
   double lgconN,lgconY,lgcatN,lgcatY,lgcondraw,lgcatdraw;
   double lgcont,lgcatt;
   //	double mgconN, mgconY, mgcatN, mgcatY, sgconN, sgconY, sgcatY, sgcatN;
 
-  double *gtilN = R_VectorInit((*nobs+1),0.0);
-  double *gtilY = R_VectorInit((*nobs+1),0.0);
-//  double sgY, sgN, lgtilN, lgtilY, maxgtilY, maxgtilN;
+  double *gtilN = R_VectorInit((*nsubject+1),0.0);
+  double *gtilY = R_VectorInit((*nsubject+1),0.0);
+  double sgY, sgN, lgtilN, lgtilY, maxgtilY, maxgtilN;
+
+  double *sumx = R_VectorInit((*nsubject)*(*ncon),0.0);
+  double *sumx2 = R_VectorInit((*nsubject)*(*ncon),0.0);
+  int  nhc[(*nsubject)*(*ncat)*max_C];
 
 
   // stuff I need to update sig2 (subject specific), mub0, sig2b0;
@@ -300,22 +273,21 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
 
   // stuff that I need for player specific beta's;
   //	double *H = R_VectorInit((*nsubject)*(nb)*(max_nobs),0.0);
-  double *H = R_VectorInit((*nsubject)*(nb)*(max_nobs),0.0);
-  double *tH = R_VectorInit((*nsubject)*(nb)*(max_nobs),0.0);
-  double *HtH = R_Vector(max_nobs*max_nobs);
-  double *Hty1 = R_Vector(max_nobs*max_nobs);
-  double *Hty2 = R_Vector(max_nobs*max_nobs);
+  double *H = R_VectorInit((*nsubject)*(nb)*(big),0.0);
+  double *tH = R_VectorInit((*nsubject)*(nb)*(big),0.0);
+  double *HtH = R_Vector(nb*nb);
+  double *Hty1 = R_Vector(nb);
+  double *Hty2 = R_Vector(nb);
 
-  double *z_tmp = R_Vector(max_nobs);
-  double *y1_tmp = R_Vector(max_nobs);
-  double *y2_tmp = R_Vector(max_nobs);
+  double *y1_tmp = R_Vector(big);
+  double *y2_tmp = R_Vector(big);
 
   double sumy1_Hb, s2star1, mstar1;
   double sumy2_Hb, s2star2, mstar2;
-  double *y1_b0 = R_Vector(max_nobs);
-  double *y2_b0 = R_Vector(max_nobs);
-  double *Hb1 = R_Vector(max_nobs);
-  double *Hb2 = R_Vector(max_nobs);
+  double *y1_b0 = R_Vector(big);
+  double *y2_b0 = R_Vector(big);
+  double *Hb1 = R_Vector(big);
+  double *Hb2 = R_Vector(big);
 
 
   // Create the inverse of the K penalty matrix
@@ -357,13 +329,13 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
   double sumtau22;
 
   // stuff that I need to perform the predictions
-  double *thetatmp1 = R_VectorInit(nb, 0.0);
-  double *thetatmp2 = R_VectorInit(nb, 0.0);
-  double *bpred1 = R_VectorInit(nb, 0.0);
-  double *bpred2 = R_VectorInit(nb, 0.0);
-  double *ppredtmp1 = R_VectorInit(100,0.0);
-  double *ppredtmp2 = R_VectorInit(100,0.0);
-  double lgcon0, lgcat0=0.0;
+//  double *thetatmp1 = R_VectorInit(nb, 0.0);
+//  double *thetatmp2 = R_VectorInit(nb, 0.0);
+//  double *bpred1 = R_VectorInit(nb, 0.0);
+//  double *bpred2 = R_VectorInit(nb, 0.0);
+//  double *ppredtmp1 = R_VectorInit(100,0.0);
+//  double *ppredtmp2 = R_VectorInit(100,0.0);
+//  double lgcon0, lgcat0=0.0;
 
 
   // stuff that I need to compute the lpml;
@@ -376,48 +348,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
 
 
 
-  // 	intial function basis matrix
-  // 	B-spline basis
-  // 	Also initial marginal likelihood, beta vector, and alpha_star;
-  // 	And produce prior mean for mu; (parabola centered a 0.5 with max equal to 0.3)
-  //	RprintIVecAsMat("catvar", catvar, 1, *nsubject);
-  double *Boundaryknots = R_Vector(2*(*nsubject));
-  double *bktmp = R_Vector(2);
-  double *knotstmp = R_Vector(*nknots);
-  csobs=0;
-  for(j = 0; j < *nsubject; j++){
 
-    //		Boundaryknots[0*(*nsubject) + j] = knots[0]-1.0;
-    //		Boundaryknots[1*(*nsubject) + j] = knots[(*nknots)*(*nsubject)-1]+1.0;
-    Boundaryknots[0*(*nsubject) + j] = -0.05;
-    Boundaryknots[1*(*nsubject) + j] = 1.05;
-
-  }
-
-  //	RprintVecAsMat("Boundaryknots", Boundaryknots, 2, *nsubject);
-  // Create the H matrix for predictions
-
-  double *Hpred = R_VectorInit((*nsubject)*(nb)*(*npredobs), 0.0);
-
-
-  // Use same knots used for all players
-
-  for(k = 0; k < *nknots; k++){
-
-    knotstmp[k] = knots[k*(*nsubject)+0];
-
-  }
-
-  bktmp[0] = Boundaryknots[0];
-  bktmp[1] = Boundaryknots[2*(*nsubject)-1];
-
-  for(k = 0; k < *npredobs; k++){
-
-    z_tmp[k] = zpred[k]/((double) *npredobs);
-
-  }
-
-  //  bsb(z_tmp, knotstmp, bktmp, Hpred, *npredobs, *nknots, *q);
 
   if(*balanced==1){
     for(t=0; t < nobs[0]; t++){
@@ -425,34 +356,27 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
         H[t*(nb) + kk] = Hmat[t*(nb) + kk];
       }
     }
+    
+    mat_transpose(H, tH, nobs[0], nb);
+    matrix_product(tH, H, HtH, nb, nb, nobs[0]);
+
+    // RprintVecAsMat("H", H, nobs[0], nb);
   }
 
-  //	RprintVecAsMat("Hpred", Hpred, *npredobs, nb);
-  //	RprintVecAsMat("H", H, *nobs, nb);
-  //	RprintVecAsMat("Hmat", Hmat, *nobs, nb);
 
-  //	RprintVecAsMat("z_tmp", z_tmp, 1, *npredobs);
-  //	RprintVecAsMat("knotstmp", knotstmp, 1, *nknots);
-  //	RprintVecAsMat("bktmp", bktmp, 1, 2);
-  //	Rprintf("npredobs = %d\n", *npredobs);
-  //	Rprintf("nknots = %d\n", *nknots);
-  //	Rprintf("q = %d\n", *q);
-
-  //	bsb(z_tmp, knotstmp, bktmp, Hpred, *npredobs, *nknots, *q);
-
-  //	RprintVecAsMat("Hpred", Hpred, *npredobs, nb);
 
   double *mnmle = R_Vector(*ncon);
   double *s2mle = R_Vector(*ncon);
+  double sum, sum2;
   for(p = 0; p < *ncon; p++){
-    sumx = 0.0, sumx2=0.0;
-    for(j = 0; j < *nobs; j ++){
-      sumx = sumx + Xcon[j*(*ncon) + p];
-      sumx2 = sumx2 + Xcon[j*(*ncon) + p]*Xcon[j*(*ncon) + p];
+    sum = 0.0, sum2=0.0;
+    for(j = 0; j < *nsubject; j ++){
+      sum = sum + Xcon[j*(*ncon) + p];
+      sum2 = sum2 + Xcon[j*(*ncon) + p]*Xcon[j*(*ncon) + p];
     }
 
-    mnmle[p] = sumx/((double) *nobs);
-    s2mle[p] = sumx2/((double) *nobs) - mnmle[p]*mnmle[p];
+    mnmle[p] = sum/((double) *nsubject);
+    s2mle[p] = sum2/((double) *nsubject) - mnmle[p]*mnmle[p];
   }
 
 
@@ -470,7 +394,6 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
   // priors for mu
   double s2mu = modelPriors[1];
 
-  //	for(j = 0; j<nb; j++) m_mu[j]=bhat[j];
 
   // priors for mub0 and sig2b0;
   double mb0 = modelPriors[2], s2b0 = modelPriors[3];
@@ -506,6 +429,46 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
 
   Rprintf("Mdp = %f\n", Mdp);
   RprintVecAsMat("dirweights", dirweights, 1, max_C);
+
+
+
+
+  // ===================================================================================
+  //
+  // Initialize the cluster-specific sufficient statistics for continuous covariates
+  // and categorical covariates.
+  //
+  // ===================================================================================
+  if(!(*PPM)){
+    for(j=0;j<*nsubject;j++){
+      mnlike[j] = 0.0;
+      mnllike[j] = 0.0;
+      for(p=0;p<*ncon;p++){
+        sumx[j*(*ncon) + p] = 0.0;
+        sumx2[j*(*ncon) + p] = 0.0;
+      }
+      for(p=0;p<*ncat;p++){
+        for(c=0; c<max_C; c++){
+          nhc[(j*(*ncat) + p)*max_C + c] = 0;
+        }
+      }
+    }
+
+    // Fill in cluster-specific sufficient statistics based on first partition
+    for(j = 0; j < *nsubject; j++){
+      for(p=0; p<*ncon; p++){
+        sumx[(Si_iter[j]-1)*(*ncon) + p] = sumx[(Si_iter[j]-1)*(*ncon) + p] + Xcon[j*(*ncon)+p];
+        sumx2[(Si_iter[j]-1)*(*ncon) + p] = sumx2[(Si_iter[j]-1)*(*ncon) + p] + Xcon[j*(*ncon)+p]*Xcon[j*(*ncon)+p];
+      }
+      for(p=0; p<*ncat; p++){
+        nhc[((Si_iter[j]-1)*(*ncat) + p)*(max_C) + Xcat[j*(*ncat)+p]] =
+          nhc[((Si_iter[j]-1)*(*ncat) + p)*(max_C) + Xcat[j*(*ncat)+p]] + 1;
+      }
+    }
+  }
+
+//  RprintIVecAsMat("nhc", nhc, *ncat, max_C);
+//  RprintIVecAsMat("Xcat", Xcat, *nobs, *ncat);
 
   // Candidate density sd's for M-H stuff
   double csigLAM1 = mh[0], csigLAM2 = mh[1], csigSIG=mh[2];
@@ -550,25 +513,31 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
     //		RprintIVecAsMat("Si_iter", Si_iter, 1, *nsubject);
     //		Rprintf("nclus_iter = %d\n", nclus_iter);
     for(j = 0; j < *nsubject; j++){
-
-
-      //			Rprintf("j = %d =================== \n", j);
-
-      //			RprintIVecAsMat("Si_iter", Si_iter, 1, *nsubject);
-      //			RprintIVecAsMat("nh", nh, 1, *nsubject);
-      //			Rprintf("nclus_iter = %d\n", nclus_iter);
-
-      //			RprintVecAsMat("tau2h", tau2h, 1, *nsubject);
-      //			RprintVecAsMat("lamh", lamh, 1, *nsubject);
-      //			RprintVecAsMat("thetah", thetah, nb, *nsubject);
-      //			RprintIVecAsMat("nh", nh, 1, *nsubject);
-      //			Rprintf("Si_iter[j] = %d\n", Si_iter[j]);
-      //			Rprintf("nh[Si_iter[j]-1] = %d\n", nh[Si_iter[j]-1]);
+   
+//      Rprintf("j = %d\n", j);
 
       if(nh[Si_iter[j]-1] > 1){
 
         // Observation belongs to a non-singleton ...
         nh[Si_iter[j]-1] = nh[Si_iter[j]-1] - 1;
+
+        if(!(*PPM)){
+          // need to reduce the sumx sumx2 to
+          for(p = 0; p < *ncon; p++){
+            sumx[(Si_iter[j]-1)*(*ncon) + p] = sumx[(Si_iter[j]-1)*(*ncon) + p] - Xcon[j*(*ncon)+p];
+            sumx2[(Si_iter[j]-1)*(*ncon) + p] = sumx2[(Si_iter[j]-1)*(*ncon) + p] - Xcon[j*(*ncon)+p]*Xcon[j*(*ncon)+p];
+          }
+
+          // need to reduce the nhc
+          for(p = 0; p < *ncat; p++){
+
+            nhc[((Si_iter[j]-1)*(*ncat) + p)*(max_C) + Xcat[j*(*ncat)+p]] =
+               nhc[((Si_iter[j]-1)*(*ncat) + p)*(max_C) + Xcat[j*(*ncat)+p]] - 1;
+
+          }
+        }
+
+
 
       }else{
 
@@ -586,11 +555,8 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
           for(jj = 0; jj < *nsubject; jj++){
 
             if(Si_iter[jj] == nclus_iter){
-
               Si_iter[jj] = iaux;
-
             }
-
           }
 
 
@@ -599,61 +565,87 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
           // The following steps swaps order of cluster specific parameters
           // so that the newly labeled subjects from previous step retain
           // their correct cluster specific parameters
-          auxt1 = tau2h1[iaux-1];
+          auxreal = tau2h1[iaux-1];
           tau2h1[iaux-1] = tau2h1[nclus_iter-1];
-          tau2h1[nclus_iter-1] = auxt1;
+          tau2h1[nclus_iter-1] = auxreal;
 
-          auxt2 = tau2h2[iaux-1];
+          auxreal = tau2h2[iaux-1];
           tau2h2[iaux-1] = tau2h2[nclus_iter-1];
-          tau2h2[nclus_iter-1] = auxt2;
+          tau2h2[nclus_iter-1] = auxreal;
 
-          auxl1 = lamh1[iaux-1];
+          auxreal = lamh1[iaux-1];
           lamh1[iaux-1] = lamh1[nclus_iter-1];
-          lamh1[nclus_iter-1] = auxl1;
+          lamh1[nclus_iter-1] = auxreal;
 
-          auxl2 = lamh2[iaux-1];
+          auxreal = lamh2[iaux-1];
           lamh2[iaux-1] = lamh2[nclus_iter-1];
-          lamh2[nclus_iter-1] = auxl2;
+          lamh2[nclus_iter-1] = auxreal;
 
           for(b = 0; b < nb; b++){
 
-            auxth1 = thetah1[b*(nclus_iter) + iaux-1];
+            auxreal = thetah1[b*(nclus_iter) + iaux-1];
             thetah1[b*(nclus_iter) + iaux-1] = thetah1[b*(nclus_iter) + nclus_iter-1];
-            thetah1[b*(nclus_iter) + nclus_iter-1] = auxth1;
+            thetah1[b*(nclus_iter) + nclus_iter-1] = auxreal;
 
-            auxth2 = thetah2[b*(nclus_iter) + iaux-1];
+            auxreal = thetah2[b*(nclus_iter) + iaux-1];
             thetah2[b*(nclus_iter) + iaux-1] = thetah2[b*(nclus_iter) + nclus_iter-1];
-            thetah2[b*(nclus_iter) + nclus_iter-1] = auxth2;
+            thetah2[b*(nclus_iter) + nclus_iter-1] = auxreal;
           }
 
-          //					RprintVecAsMat("thetah", thetah, nb, *nsubject);
 
           // the number of members in cluster is also swapped with the last
           nh[iaux-1] = nh[nclus_iter-1];
           nh[nclus_iter-1] = 1;
+          
+          if(!(*PPM)){
+            // need to swap sumx and sumx2
+            for(p = 0; p < *ncon; p++){
+              auxreal = sumx[(iaux-1)*(*ncon) + p];
+              sumx[(iaux-1)*(*ncon) + p] = sumx[(nclus_iter-1)*(*ncon) + p];
+              sumx[(nclus_iter-1)*(*ncon) + p] = auxreal;
+
+              auxreal = sumx2[(iaux-1)*(*ncon) + p];
+              sumx2[(iaux-1)*(*ncon) + p] = sumx2[(nclus_iter-1)*(*ncon) + p];
+              sumx2[(nclus_iter-1)*(*ncon) + p] = auxreal;
+
+            }
+
+            // need to swap nhc as well
+            for(p = 0; p < *ncat; p++){
+              for(c=0; c<max_C; c++){
+                auxint = nhc[((iaux-1)*(*ncat) + p)*(max_C) + c];
+                nhc[((iaux-1)*(*ncat) + p)*(max_C) + c] = nhc[((nclus_iter-1)*(*ncat) + p)*(max_C) + c];
+                nhc[((nclus_iter-1)*(*ncat) + p)*(max_C) + c] = auxint;
+              }
+            }
+          }
 
         }
 
 
         // Now remove the ith obs and last cluster;
         nh[nclus_iter-1] = nh[nclus_iter-1] - 1;
+
+
+        // need to reduce the sumx sumx2
+        if(!(*PPM)){
+          for(p = 0; p < *ncon; p++){
+            sumx[(nclus_iter-1)*(*ncon) + p] = sumx[(nclus_iter-1)*(*ncon) + p] - Xcon[j*(*ncon)+p];
+            sumx2[(nclus_iter-1)*(*ncon) + p] = sumx2[(nclus_iter-1)*(*ncon) + p] - Xcon[j*(*ncon)+p]*Xcon[j*(*ncon)+p];
+          }
+
+          // need to reduce the nhc
+          for(p = 0; p < *ncat; p++){
+
+             nhc[((nclus_iter-1)*(*ncat) + p)*(max_C) + Xcat[j*(*ncat)+p]] =
+                nhc[((nclus_iter-1)*(*ncat) + p)*(max_C) + Xcat[j*(*ncat)+p]] - 1;
+
+           }
+        }
+        // Finally reduce the number of clusters
         nclus_iter = nclus_iter - 1;
-
-
       }
 
-      //			RprintIVecAsMat("Si_iter", Si_iter, 1, *nsubject);
-
-      //			RprintVecAsMat("tau2h", tau2h, 1, *nsubject);
-      //			RprintVecAsMat("lamh", lamh, 1, *nsubject);
-      //			RprintVecAsMat("thetah", thetah, nb, *nsubject);
-      //			RprintIVecAsMat("nh", nh, 1, *nsubject);
-
-      //			Rprintf("nclus_iter = %d\n", nclus_iter);
-
-
-      //			RprintIVecAsMat("x", x, 1, *nsubject);
-      //			RprintIVecAsMat("x2", x2, 1, *nsubject);
 
 
       // The atoms have been relabeled if necessary and now we need to
@@ -666,8 +658,6 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
 
       }
 
-      //			RprintVecAsMat("btmp", btmp, 1, nb);
-
 
       ///////////////////////////////////
       //
@@ -676,13 +666,12 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
       //////////////////////////////////
       for(k = 0 ; k < nclus_iter; k++){
 
-        //				Rprintf("k = %d ==================== \n", k);
+//        Rprintf("k = %d ==================== \n", k);
 
         for(b = 0; b < nb; b++){
 
           thtmp1[b] = thetah1[b*(nclus_iter) + k];
           thtmp2[b] = thetah2[b*(nclus_iter) + k];
-
 
           for(bb = 0; bb < nb; bb++){
 
@@ -698,303 +687,173 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
           }
         }
 
-        //				Rprintf("tau2h = %f\n", tau2h[k]);
-        //				Rprintf("lamh = %f\n", lamh[k]);
-        //				RprintVecAsMat("thtmp", thtmp, 1, nb);
-        //				RprintVecAsMat("btmp", btmp, 1, nb);
-        //				RprintVecAsMat("oV", oV, nb, nb);
 
         ldo1 = 2.0*nb*log(lamh1[k]);
         ldo2 = 2.0*nb*log(lamh2[k]);
 
-        //				Rprintf("nh[k] = %d\n", nh[k]);
-
 
         lgconY = 0.0;
         lgconN = 0.0;
-        //				RprintIVecAsMat("Si_iter",Si_iter, 1, *nsubject);
-        for(p=0; p<(*ncon); p++){
-
-          //					Rprintf("p = %d ====== \n", p) ;
-          nhtmp = 0;
-          sumx = 0.0;
-          sumx2 = 0.0;
-          for(jj = 0; jj < *nsubject; jj++){
-            if(jj != j){
-              if(Si_iter[jj] == k+1){
-                tmp = Xcon[jj*(*ncon)+p];
-
-                sumx = sumx + tmp;
-                sumx2 = sumx2 + tmp*tmp;
-
-                nhtmp = nhtmp+1;
-                //								Rprintf("nhtmp = %d\n", nhtmp);
-              }
-            }
-          }
-
-          //					Rprintf("nh[k] = %d\n", nh[k]);
-          //					RprintVecAsMat("xcontmp", xcontmp, 1, nhtmp);
-
-          //					sumx = 0.0;
-          //					sumx2 = 0.0;
-          //					for(t = 0; t < nhtmp; t++){
-
-          //						sumx = sumx + xcontmp[t];
-          //						sumx2 = sumx2 + xcontmp[t]*xcontmp[t];
-
-          //					}
-
-          //					Rprintf("sumx = %f\n", sumx);
-          //					Rprintf("sumx2 = %f\n", sumx2);
-          //					Rprintf("nhtmp = %d\n", nhtmp);
-
-          if(*gcontype==1){ // Auxilliary
-            if(*consim==1){
-              lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 0, 0, 1);
-              //							lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 0, 1, 1);
-
-              lgconN = lgconN + lgcont;
-            }
-            if(*consim==2){
-              lgcont = gsimconNNIG(m0, k0, nu0, s20, sumx, sumx2, mnmle[p], s2mle[p], nhtmp, 0, 0, 1);
-              //							lgcont = gsimconNNIG(m0, k0, nu0, s20, sumx, sumx2, mnmle[p], s2mle[p], nhtmp, 0, 1, 1);
-
-              lgconN = lgconN + lgcont;
-            }
-
-          }
-
-          if(*gcontype==2){ //Double Dipper
-            if(*consim==1){
-              lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 1, 0, 1);
-              //							lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 1, 1, 1);
-
-              lgconN = lgconN + lgcont;
-            }
-            if(*consim==2){
-              lgcont = gsimconNNIG(m0, k0, nu0, s20, sumx, sumx2, mnmle[p], s2mle[p], nhtmp, 1, 0, 1);
-              //							lgonct = gsimconNNIG(m0, k0, nu0, s20, sumx, sumx2, mnmle[p], s2mle[p], nhtmp, 1, 1, 1);
-
-              lgconN = lgconN + lgcont;
-            }
-          }
-
-          if(*gcontype==3){ // Cluster Variance
-            //						Rprintf("gsimconEV = %f\n", gsimconEV(sumx, sumx2, nhtmp, alpha, 0));
-            lgcont = gsimconEV(sumx, sumx2, nhtmp, alpha,1);
-
-            lgconN = lgconN + lgcont;
-          }
-
-          //					Rprintf("lgcontN = %f\n", lgcont);
-          //					Rprintf("lgconN = %f\n", lgconN);
-
-          // now add jth individual back;
-          //					RprintVecAsMat("xconpred", xconpred, 1, *npred);
-
-          //					Rprintf("sumx = %f\n", sumx);
-          //					Rprintf("sumx2 = %f\n", sumx2);
-          //					Rprintf("Xcon[j*(*ncon)+p] = %f\n", Xcon[j*(*ncon)+p]);
-
-          xcontmp[nhtmp] = Xcon[j*(*ncon)+p];
-          sumx = sumx + Xcon[j*(*ncon)+p];
-          sumx2 = sumx2 + Xcon[j*(*ncon)+p]*Xcon[j*(*ncon)+p];
-          nhtmp = nhtmp+1;
-
-
-
-          //					Rprintf("nhtmp = %d\n", nhtmp);
-          //					Rprintf("sumx = %f\n", sumx);
-          //					Rprintf("sumx2 = %f\n", sumx2);
-          if(*gcontype==1){ // Auxilliary
-            if(*consim==1){
-              lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 0, 0, 1);
-              //							lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 0, 1, 1);
-              lgconY = lgconY + lgcont;
-            }
-            if(*consim==2){
-              lgcont = gsimconNNIG(m0, k0, nu0, s20, sumx, sumx2, mnmle[p], s2mle[p], nhtmp, 0, 0, 1);
-              //							lgcont = gsimconNNIG(m0, k0, nu0, s20, sumx, sumx2, mnmle[p], s2mle[p], nhtmp, 0, 1, 1);
-              lgconY = lgconY + lgcont;
-            }
-          }
-          if(*gcontype==2){ //Double Dipper
-            if(*consim==1){
-              lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 1, 0, 1);
-              //							lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 1, 1, 1);
-              lgconY = lgconY + lgcont;
-            }
-            if(*consim==2){
-              lgcont = gsimconNNIG(m0, k0, nu0, s20, sumx, sumx2, mnmle[p], s2mle[p], nhtmp, 1, 0, 1);
-              //							lgcont = gsimconNNIG(m0, k0, nu0, s20, sumx, sumx2, mnmle[p], s2mle[p], nhtmp, 1, 1, 1);
-              lgconY = lgconY + lgcont;
-            }
-          }
-          if(*gcontype==3){ // variance
-            //						Rprintf("gsimconEV = %f\n", gsimconEV(sumx, sumx2, nhtmp, alpha, 0));
-            lgcont = gsimconEV(sumx, sumx2, nhtmp, alpha,1);
-            lgconY = lgconY + lgcont;
-          }
-
-          //					Rprintf("lgcontY = %f\n", lgcont);
-          //					Rprintf("lgconY = %f\n", lgconY);
-
-
-        }
-
-
-        //				RprintIVecAsMat("Si_iter", Si_iter, 1, *nobs);
-
         lgcatY=0.0;
         lgcatN=0.0;
-
-
-        for(p=0; p<(*ncat); p++){
-
-
-          //					Rprintf("p = %d ====== \n", p) ;
-          for(c=0;c<Cvec[p];c++){nhc[c]=0;}
-
-          nhtmp = 0;
-          for(jj = 0; jj < *nsubject; jj++){
-            //						Rprintf("jj = %d\n", jj);
-            if(jj != j){
-              //							Rprintf("Xcatstd[jj*(*ncat)+p] = %d\n", Xcatstd[jj*(*ncat)+p]);
-              //							Rprintf("Si_iter[jj] = %d\n", Si_iter[jj]);
-
-              if(Si_iter[jj]==k+1){
-                nhc[Xcat[jj*(*ncat)+p]] = nhc[Xcat[jj*(*ncat)+p]] + 1; // this needs to be a vector
-                //                              RprintIVecAsMat("nhc", nhc, 1, Cvec[p]);
-                nhtmp = nhtmp+1;
-
+        
+        if(!(*PPM)){
+        
+          for(p=0; p<(*ncon); p++){
+  
+            sumxtmp = sumx[k*(*ncon) + p];
+            sumx2tmp = sumx2[k*(*ncon) + p];
+  
+            if(*similarity_function==1){ // Auxilliary
+              if(*consim==1){
+                lgcont = gsimconNN(m0, v2, s20, sumxtmp, sumx2tmp, mnmle[p], nh[k], 0, 0, 1);
+                lgconN = lgconN + lgcont;
+              }
+              if(*consim==2){
+                lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nh[k], 0, 0, 1);
+                lgconN = lgconN + lgcont;
+              }
+  
+            }
+  
+            if(*similarity_function==2){ //Double Dipper
+              if(*consim==1){
+                lgcont = gsimconNN(m0, v2, s20, sumxtmp, sumx2tmp, mnmle[p], nh[k], 1, 0, 1);
+                lgconN = lgconN + lgcont;
+              }
+              if(*consim==2){
+                lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nh[k], 1, 0, 1);
+                lgconN = lgconN + lgcont;
               }
             }
-            //						RprintIVecAsMat("nhc", nhc, 1, Cvec[p]);
-          }
-
-          //					RprintIVecAsMat("nhc", nhc, 1, Cvec[p]);
-          //					Rprintf("nhtmp = %d\n", nhtmp);
-
-
-          if(*gcattype==1){
-            lgcatt = gsimcatDM(nhc, dirweights, Cvec[p], 0, 1);
-            lgcatN = lgcatN + lgcatt;
-          }
-          if(*gcattype==2){
-            lgcatt = gsimcatDM(nhc, dirweights, Cvec[p], 1, 1);
-            lgcatN = lgcatN + lgcatt;
-          }
-          if(*gcattype==3){// Using Entropy instead of variance here
-            //						Rprintf("gsimconEV = %f\n", gsimconEV(sumx, sumx2, nhtmp, alpha,  0));
-            //						lgcatt = gsimconEV(sumx, sumx2, nhtmp, alpha,1);
-            lgcatt = 0.0;
-            for(c=0;c<Cvec[p];c++){
-              if(nhc[c]==0){
-                lgcatt = lgcatt + 0;
-              }else{
-                lgcatt = lgcatt + -((double) nhc[c]/(double) nhtmp)*(
-                  log((double) nhc[c]/(double) nhtmp)/log(2));
-              }
-
+  
+            if(*similarity_function==3){ // Cluster Variance
+              lgcont = gsimconEV(sumxtmp, sumx2tmp, nh[k], alpha,1);
+              lgconN = lgconN + lgcont;
             }
-            lgcatN = lgcatN + -(alpha)*lgcatt;
-          }
-          //					Rprintf("lgcattN = %f\n", lgcatt);
-          //					Rprintf("lgcatN = %f\n", lgcatN);
-
-          //					Rprintf("Xcatstd[j*(*ncat)+p] = %f\n", Xcatstd[j*(*ncat)+p]);
-
-          nhc[Xcat[j*(*ncat)+p]] = nhc[Xcat[j*(*ncat)+p]] + 1;
-          nhtmp = nhtmp + 1;
-
-          //					RprintIVecAsMat("nhc", nhc, 1, Cvec[p]);
-          //					Rprintf("nhtmp = %d\n", nhtmp);
-
-          if(*gcattype==1){
-            lgcatt = gsimcatDM(nhc, dirweights, Cvec[p], 0, 1);
-            lgcatY = lgcatY + lgcatt;
-          }
-          if(*gcattype==2){
-            lgcatt = gsimcatDM(nhc, dirweights, Cvec[p], 1, 1);
-            lgcatY = lgcatY + lgcatt;
-          }
-          if(*gcattype==3){// Using Entropy instead of variance here
-            //						Rprintf("gsimconEV = %f\n", gsimconEV(sumx, sumx2, nhtmp, alpha, 0));
-            //						lgcatt = gsimconEV(sumx, sumx2, nhtmp, alpha, 1);
-            lgcatt = 0.0;
-            for(c=0;c<Cvec[p];c++){
-              if(nhc[c]==0){
-                lgcatt = lgcatt + 0;
-              }else{
-                lgcatt = lgcatt + -((double) nhc[c]/(double) nhtmp)*(
-                  log((double) nhc[c]/(double) nhtmp)/log(2));
+  
+            // now add jth individual back;
+      	    sumxtmp = sumxtmp + Xcon[j*(*ncon)+p];
+      	    sumx2tmp = sumx2tmp + Xcon[j*(*ncon)+p]*Xcon[j*(*ncon)+p];
+  
+            if(*similarity_function==1){ // Auxilliary
+              if(*consim==1){
+                lgcont = gsimconNN(m0, v2, s20, sumxtmp, sumx2tmp, mnmle[p], nh[k]+1, 0, 0, 1);
+                lgconY = lgconY + lgcont;
+              }
+              if(*consim==2){
+                lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nh[k]+1, 0, 0, 1);
+                lgconY = lgconY + lgcont;
               }
             }
-            lgcatY = lgcatY + -(alpha)*lgcatt;
+            if(*similarity_function==2){ //Double Dipper
+              if(*consim==1){
+                lgcont = gsimconNN(m0, v2, s20, sumxtmp, sumx2tmp, mnmle[p], nh[k]+1, 1, 0, 1);
+                lgconY = lgconY + lgcont;
+              }
+              if(*consim==2){
+                lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nh[k]+1, 1, 0, 1);
+                lgconY = lgconY + lgcont;
+              }
+            }
+            if(*similarity_function==3){ // variance
+              //						Rprintf("gsimconEV = %f\n", gsimconEV(sumx, sumx2, nhtmp, alpha, 0));
+              lgcont = gsimconEV(sumxtmp, sumx2tmp, nh[k]+1, alpha,1);
+              lgconY = lgconY + lgcont;
+            }
+  
           }
-          //					Rprintf("lgcattY = %f\n", lgcatt);
-          //					Rprintf("lgcatY = %f\n", lgcatY);
+  
+  
+     	  // Now calculate similarity for the categorical covariates  
+          for(p=0; p<(*ncat); p++){
+  
+             for(c=0;c<Cvec[p];c++){
+              nhctmp[c] = nhc[(k*(*ncat) + p)*(max_C) + c];
+            }
+  
+//            RprintIVecAsMat("nhctmp", nhctmp, 1, Cvec[p]);
+//            Rprintf("Cvec[p] = %d\n", Cvec[p]);
+            
+            if(*similarity_function==1){
+              lgcatt = gsimcatDM(nhctmp, dirweights, Cvec[p], 0, 1);
+              lgcatN = lgcatN + lgcatt;
+            }
+            if(*similarity_function==2){
+              lgcatt = gsimcatDM(nhctmp, dirweights, Cvec[p], 1, 1);
+              lgcatN = lgcatN + lgcatt;
+            }
+            if(*similarity_function==3){// Using Entropy instead of variance here
+              lgcatt = 0.0;
+              for(c=0;c<Cvec[p];c++){
+                if(nhctmp[c]==0){
+                  lgcatt = lgcatt + 0;
+                }else{
+                  lgcatt = lgcatt + -((double) nhc[c]/(double) nh[k])*
+                                      (log((double) nhc[c]/(double) nh[k])/log(2));
+                }
+  
+              }
+              lgcatN = lgcatN + -(alpha)*lgcatt;
+            }
+//            Rprintf("lgactN = %f\n", lgcatN);
+  
+            // include the categorical covariate in the kth cluster
+//            Rprintf("Xcat[j*(*ncat)+p] = %d\n", Xcat[j*(*ncat)+p]);
+      	  	nhctmp[Xcat[j*(*ncat)+p]] = nhctmp[Xcat[j*(*ncat)+p]] + 1;
+//            RprintIVecAsMat("nhctmp", nhctmp, 1, Cvec[p]);
+  
+            if(*similarity_function==1){
+              lgcatt = gsimcatDM(nhctmp, dirweights, Cvec[p], 0, 1);
+              lgcatY = lgcatY + lgcatt;
+            }
+            if(*similarity_function==2){
+              lgcatt = gsimcatDM(nhctmp, dirweights, Cvec[p], 1, 1);
+              lgcatY = lgcatY + lgcatt;
+            }
+            if(*similarity_function==3){// Using Entropy instead of variance here
+              lgcatt = 0.0;
+              for(c=0;c<Cvec[p];c++){
+                if(nhctmp[c]==0){
+                  lgcatt = lgcatt + 0;
+                }else{
+                  lgcatt = lgcatt + -((double) nhc[c]/(double) nh[k]+1)*
+                                      (log((double) nhc[c]/(double) nh[k]+1)/log(2));
+                }
+              }
+              lgcatY = lgcatY + -(alpha)*lgcatt;
+            }
+  
+//            Rprintf("lgcatY = %f\n", lgcatY);
+          }
+  
+          gtilY[k] = lgconY + lgcatY;
+          gtilN[k] = lgconN + lgcatN;
+        } // THIS ENDS THE PPMX PART.  
 
 
-        }
-
-        gtilY[k] = lgconY + lgcatY;
-        gtilN[k] = lgconN + lgcatN;
-
-
-        //				RprintVecAsMat("btmp", btmp, 1, nb);
-        //				RprintVecAsMat("thtmp", thtmp, 1, nb);
-
-        //				Rprintf("sumsq1 = %f\n", sumsq1);
-        //				Rprintf("log(tau2h[k] = %f\n", log(tau2h[k]));
-        //				Rprintf("dmvnorm(btmp, thtmp, oV, nb, ldo, scr1, 1) = %f\n",
-        //							dmvnorm(btmp, thtmp, oV, nb, ldo, scr1, 1));
-        //				Rprintf("-0.5*(nb*log(tau2h[k]) + (1/tau2h[k])*sumsq) = %f\n",
-        //								-0.5*(nb*log(tau2h[k]) + (1/tau2h[k])*sumsq));
-        //				Rprintf("log(nh[k]) = %f\n", log(nh[k]));
-        //				Rprintf("lgcatY = %f\n", lgcatY);
-        //				Rprintf("lgcatN = %f\n", lgcatN);
-        //				Rprintf("lgcatY - lgcatN = %f\n", lgcatY - lgcatN);
-        //				Rprintf("lgconY = %f\n", lgconY);
-        //				Rprintf("lgconN = %f\n", lgconN);
-        //				Rprintf("lgconY - lgconN = %f\n", lgconY - lgconN);
-
-
-
-
+      	// Compute the unnormalized cluster probabilities
+      	// Note that if PPMx = FALSE then
+      	// lgcatY = lgcatN = lgconY = lgconN = 0;
+//      	Rprintf("dmvnorm(btmp1, thtmp1, oV1, nb, ldo1, scr1, 1) = %f\n", dmvnorm(btmp1, thtmp1, oV1, nb, ldo1, scr1, 1));
+//      	Rprintf("dmvnorm(btmp2, thtmp2, oV2, nb, ldo2, scr2, 1) = %f\n", dmvnorm(btmp2, thtmp2, oV2, nb, ldo2, scr2, 1));
+//      	Rprintf("log((double) nh[k]) = %f\n", log((double) nh[k]));
+//      	Rprintf("lgcatY - lgcatN = %f\n", lgcatY - lgcatN);
+//      	Rprintf("lgconY - lgconN = %f\n", lgconY - lgconN);
         ph[k] = dmvnorm(btmp1, thtmp1, oV1, nb, ldo1, scr1, 1) +
-          dmvnorm(btmp2, thtmp2, oV2, nb, ldo2, scr2, 1) +
-          log((double) nh[k]) + // Scale parameter from DP
-          lgcatY - lgcatN +  // Ratio of categorical variables
-          lgconY - lgconN;   // Ratio of continuous variabels
+                dmvnorm(btmp2, thtmp2, oV2, nb, ldo2, scr2, 1) +
+                   log((double) nh[k]) + // Scale parameter from DP
+                   lgcatY - lgcatN +  // Ratio of categorical variables
+                   lgconY - lgconN;   // Ratio of continuous variabels
 
 
-        if(*PPM){
-          ph[k] = dmvnorm(btmp1, thtmp1, oV1, nb, ldo1, scr1, 1) +
-            dmvnorm(btmp2, thtmp2, oV2, nb, ldo2, scr2, 1) +
-            log((double) nh[k]);  // DP part of cohesion function
-        }
-
-        //				Rprintf("ph[k] = %f\n", ph[k]);
       }
-
-
-
-
-
-
-      //			RprintVecAsMat("ph", ph, 1, nclus_iter);
 
 
       lamdraw1 = runif(0,A1);
       lamdraw2 = runif(0,A2);
       tau2draw1 = 1/rgamma(at,bt); // shape and scale  E(tau2) = atbt
       tau2draw2 = 1/rgamma(at,bt); // shape and scale  E(tau2) = atbt
-
-      //			lamdraw = 0.1;
-      //			Rprintf("lamdraw = %f\n", lamdraw);
-      //			Rprintf("tau2draw = %f\n", tau2draw);
 
       for(b = 0; b < nb; b++){
         for(bb = 0; bb < nb; bb++){
@@ -1017,260 +876,176 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
       cholesky(nV1, nb , &ld1);
       cholesky(nV2, nb , &ld2);
 
-      //			RprintVecAsMat("mu_iter =", mu_iter, 1, nb);
       ran_mvnorm(mu1_iter, nV1, nb, scr1, thetadraw1);
       ran_mvnorm(mu2_iter, nV2, nb, scr1, thetadraw2);
-
-      //			RprintVecAsMat("thetadraw", thetadraw, 1, nb);
-      //			RprintVecAsMat("btmp", btmp, 1, nb);
-
-      //			Rprintf("K[0]-1 = %f\n", K[0]-1);
-      //			Rprintf("1/(K[0]-1) = %f\n", 1/(K[0]-1));
-
-      //			thetadraw[0] = rnorm(mu_iter[0], sqrt(tau2draw*(1/(K[0]-1))));
-      //			for(b=0; b<nb-1; b++){
-      //				thetadraw[b+1] = rnorm(thetadraw[b] + mu_iter[b], sqrt(tau2draw));
-      //			}
-
-      //			RprintVecAsMat("thetadraw", thetadraw, 1, nb);
-
 
       ldo1 = 2.0*nb*log(lamdraw1);
       ldo2 = 2.0*nb*log(lamdraw2);
 
 
       lgcondraw = 0.0;
-      for(p=0;p<(*ncon);p++){
-        xcontmp[0] = Xcon[j*(*ncon)+p];
-        //				Rprintf("Xcon[j*(*ncon)+p]=%f\n", Xcon[j*(*ncon)+p]);
-        if(*gcontype==1){ // Auxilliary
-          if(*consim==1){
-            lgcont = gsimconNN(m0,v2,s20,xcontmp[0],xcontmp[0]*xcontmp[0], mnmle[p],1,0,0, 1);
-            //						lgcont = gsimconNN(m0,v2,s20,xcontmp[0],xcontmp[0]*xcontmp[0], mnmle[p],1,0,1, 1);
-            lgcondraw = lgcondraw + lgcont;
-          }
-          if(*consim==2){
-            lgcont = gsimconNNIG(m0, k0, nu0, s20, xcontmp[0], xcontmp[0]*xcontmp[0],mnmle[p],s2mle[p], 1, 0,0, 1);
-            //						lgcont = gsimconNNIG(m0, k0, nu0, s20, xcontmp[0], xcontmp[0]*xcontmp[0],mnmle[p],s2mle[p], 1, 0,1, 1);
-            lgcondraw = lgcondraw + lgcont;
-          }
-        }
-        if(*gcontype==2){ // Double Dipper
-          if(*consim==1){
-            lgcont = gsimconNN(m0,v2,s20,xcontmp[0],xcontmp[0]*xcontmp[0], mnmle[p], 1, 1, 0, 1);
-            //						lgcont = gsimconNN(m0,v2,s20,xcontmp[0],xcontmp[0]*xcontmp[0], mnmle[p], 1, 1, 1, 1);
-            lgcondraw = lgcondraw + lgcont;
-          }
-          if(*consim==2){
-            lgcont = gsimconNNIG(m0, k0, nu0, s20, xcontmp[0], xcontmp[0]*xcontmp[0],mnmle[p],s2mle[p], 1, 1, 0, 1);
-            //						lgcont = gsimconNNIG(m0, k0, nu0, s20, xcontmp[0], xcontmp[0]*xcontmp[0],mnmle[p],s2mle[p], 1, 1, 1, 1);
-            lgcondraw = lgcondraw + lgcont;
-          }
-        }
-        if(*gcontype==3){ // Variance
-          lgcont = gsimconEV(xcontmp[0], xcontmp[0]*xcontmp[0], 1,alpha,1);
-          lgcondraw = lgcondraw + lgcont;
-        }
-
-        //				Rprintf("lgcondraw = %f\n", lgcondraw);
-      }
-
       lgcatdraw = 0.0;
-      for(p=0;p<(*ncat);p++){
-        for(c=0;c<Cvec[p];c++){nhc[c] = 0;}
-
-        nhc[Xcat[j*(*ncat)+p]] = 1;
-        //				RprintIVecAsMat("nhc =", nhc, 1, Cvec[p]);
-
-        //				Rprintf("Xcat[j*(*ncon)+p] = %d\n", Xcat[j*(*ncon)+p]);
-
-
-
-        if(*gcattype==1){
-          lgcatt = gsimcatDM(nhc, dirweights, Cvec[p], 0, 1);
-          lgcatdraw = lgcatdraw + lgcatt;
+      
+      if(!(*PPM)){
+        for(p=0;p<(*ncon);p++){
+  
+          xcontmp = Xcon[j*(*ncon)+p];
+  
+          if(*similarity_function==1){ // Auxilliary
+            if(*consim==1){
+              lgcont = gsimconNN(m0,v2,s20,xcontmp,xcontmp*xcontmp, mnmle[p],1,0,0, 1);
+              lgcondraw = lgcondraw + lgcont;
+            }
+            if(*consim==2){
+              lgcont = gsimconNNIG(m0, k0, nu0, s20, xcontmp, xcontmp*xcontmp,mnmle[p],s2mle[p], 1, 0,0, 1);
+              lgcondraw = lgcondraw + lgcont;
+            }
+          }
+          if(*similarity_function==2){ // Double Dipper
+            if(*consim==1){
+              lgcont = gsimconNN(m0,v2,s20,xcontmp,xcontmp*xcontmp, mnmle[p], 1, 1, 0, 1);
+              lgcondraw = lgcondraw + lgcont;
+            }
+            if(*consim==2){
+              lgcont = gsimconNNIG(m0, k0, nu0, s20, xcontmp, xcontmp*xcontmp,mnmle[p],s2mle[p], 1, 1, 0, 1);
+              lgcondraw = lgcondraw + lgcont;
+            }
+          }
+          if(*similarity_function==3){ // Variance
+            lgcont = gsimconEV(xcontmp, xcontmp*xcontmp, 1,alpha,1);
+            lgcondraw = lgcondraw + lgcont;
+          }
         }
-        if(*gcattype==2){
-          lgcatt = gsimcatDM(nhc, dirweights, Cvec[p], 1, 1);
-          lgcatdraw = lgcatdraw + lgcatt;
+  
+          // similarity for categorical covariate
+        for(p=0;p<(*ncat);p++){
+  
+            for(c=0;c<Cvec[p];c++){nhctmp[c] = 0;}
+            nhctmp[Xcat[j*(*ncat)+p]] = 1;
+  
+          if(*similarity_function==1){
+            lgcatt = gsimcatDM(nhctmp, dirweights, Cvec[p], 0, 1);
+            lgcatdraw = lgcatdraw + lgcatt;
+          }
+          if(*similarity_function==2){
+            lgcatt = gsimcatDM(nhctmp, dirweights, Cvec[p], 1, 1);
+            lgcatdraw = lgcatdraw + lgcatt;
+          }
+          if(*similarity_function==3){
+            lgcatdraw = lgcatdraw + -(alpha)*0;
+          }
+  
         }
-        if(*gcattype==3){
-          //					lgcatt = gsimconEV(xcattmp[0], xcattmp[0]*xcattmp[0], 1,alpha, 1);
-          //					lgcatdraw = lgcatdraw + lgcatt;
-          lgcatdraw = lgcatdraw + -(alpha)*0;
-        }
-
-        //				Rprintf("lgcatdraw = %f\n", lgcatdraw);
+  
+        gtilY[nclus_iter] = lgcondraw + lgcatdraw;
+        gtilN[nclus_iter] = lgcondraw + lgcatdraw;
       }
 
-      gtilY[nclus_iter] = lgcondraw + lgcatdraw;
-      gtilN[nclus_iter] = lgcondraw + lgcatdraw;
-
-      //			Rprintf("dmvnorm(btmp,thetadraw,oV,nb,ldo,scr1,1) = %f\n",
-      //						dmvnorm(btmp,thetadraw,oV,nb,ldo,scr1,1));
-      //			Rprintf("-0.5*(nb*log(tau2draw) + (1/tau2draw)*sumsq) = %f\n",
-      //						-0.5*(nb*log(tau2draw) + (1/tau2draw)*sumsq));
-      //			Rprintf("log(M) = %f\n", log(Mdp));
-      //			Rprintf("lgcondraw = %f\n", lgcondraw);
-      //			Rprintf("lgcatdraw = %f\n", lgcatdraw);
 
       ph[nclus_iter] = dmvnorm(btmp1,thetadraw1,oV1,nb,ldo1,scr1,1) +
-        dmvnorm(btmp2,thetadraw2,oV2,nb,ldo2,scr2,1) +
-        log(Mdp) +
-        lgcondraw +
-        lgcatdraw;
+                       dmvnorm(btmp2,thetadraw2,oV2,nb,ldo2,scr2,1) +
+                         log(Mdp) +
+                         lgcondraw +
+                         lgcatdraw;
 
 
 
-      if(*PPM){
-        ph[nclus_iter] = dmvnorm(btmp1,thetadraw1,oV1,nb,ldo1,scr1,1) +
-          dmvnorm(btmp2,thetadraw2,oV2,nb,ldo2,scr2,1) +
-          log(Mdp); //DP part
-      }
-
-      //			RprintVecAsMat("ph", ph, 1, nclus_iter+1);
-
-      /*
+      
       /////////////////////////////////////////////////////////////////////////////
       // This is the calibration used when the similarity is standardized by
       // the sum of all cluster similarity values.
       /////////////////////////////////////////////////////////////////////////////
       /////////////////////////////////////////////////////////////////////////////
       if(*calibrate==1){
+  
+        for(b = 0; b < nb; b++){
+  
+          thtmp1[b] = thetah1[b*(nclus_iter) + k];
+          thtmp2[b] = thetah2[b*(nclus_iter) + k];
+  
+          for(bb = 0; bb < nb; bb++){
+  
+            oV1[b*nb+bb] = 0.0;
+            oV2[b*nb+bb] = 0.0;
+  
+            if(b == bb){
+  
+              oV1[b*nb+bb] = 1/(lamh1[k]*lamh1[k]);
+              oV2[b*nb+bb] = 1/(lamh2[k]*lamh2[k]);
+            }
+          }
+        }
+  
+        ldo1 = 2.0*nb*log(lamh1[k]);
+        ldo2 = 2.0*nb*log(lamh2[k]);
+  
+  
+        maxgtilY = gtilY[0];
+        maxgtilN = gtilN[0];
+        for(k=1; k < nclus_iter+1; k++){
+          if(maxgtilN < gtilN[k]) maxgtilN = gtilY[k];
+          if(maxgtilY < gtilY[k]) maxgtilY = gtilY[k];
+        }
 
-      //				Rprintf("k ====== %d\n", k);
-
-      for(b = 0; b < nb; b++){
-
-      thtmp1[b] = thetah1[b*(nclus_iter) + k];
-      thtmp2[b] = thetah2[b*(nclus_iter) + k];
-
-
-      for(bb = 0; bb < nb; bb++){
-
-      oV1[b*nb+bb] = 0.0;
-      oV2[b*nb+bb] = 0.0;
-
-      if(b == bb){
-
-      oV1[b*nb+bb] = 1/(lamh1[k]*lamh1[k]);
-      oV2[b*nb+bb] = 1/(lamh2[k]*lamh2[k]);
-      //							oV[b*nb+bb] = 1/(lamh[k]);
+        sgY=0.0;
+        sgN=0.0;
+        for(k=0; k<nclus_iter+1; k++){
+          gtilN[k] = exp(gtilN[k] - maxgtilY);
+          sgN = sgN + gtilN[k];
+  
+          gtilY[k] = exp(gtilY[k] - maxgtilY);
+          sgY = sgY + gtilY[k];
+        }
+  
+      	// Calibrate the unnormalized cluster probabilities
+        for(k=0; k<nclus_iter; k++){
+          lgtilY = log(gtilY[k]) - log(sgY);
+          lgtilN = log(gtilN[k]) - log(sgN);
+  
+          ph[k] = dmvnorm(btmp1, thtmp1, oV1, nb, ldo1, scr1, 1) +
+                  dmvnorm(btmp2, thtmp2, oV2, nb, ldo2, scr2, 1) +
+                      log((double) nh[k]) +
+                      lgtilY - lgtilN; //This takes into account both cont and cat vars
+  
+        }
+  
+      	// calibration for a singleton
+        ph[nclus_iter] = dmvnorm(btmp1,thetadraw1,oV1,nb,ldo1,scr1,1) +
+                         dmvnorm(btmp2,thetadraw2,oV2,nb,ldo2,scr2,1) +
+                             log(Mdp) +
+                             log(gtilN[nclus_iter]) - log(sgN);
+  
       }
+
+      maxph = ph[0];
+      for(k = 1; k < nclus_iter+1; k++){
+      	if(maxph < ph[k]) maxph = ph[k];
       }
-      }
-
-      //				Rprintf("tau2h = %f\n", tau2h[k]);
-      //				Rprintf("lamh = %f\n", lamh[k]);
-      //				RprintVecAsMat("thtmp", thtmp, 1, nb);
-      //				RprintVecAsMat("btmp", btmp, 1, nb);
-      //				RprintVecAsMat("oV", oV, nb, nb);
-
-      ldo1 = 2.0*nb*log(lamh1[k]);
-      ldo2 = 2.0*nb*log(lamh2[k]);
-
-
-      //				Rprintf("k = %d ==================== \n", k);
-      //				Rprintf("nh[k] = %d\n", nh[k]);
-      maxgtilY = gtilY[0];
-      maxgtilN = gtilN[0];
-      for(k=1; k < nclus_iter+1; k++){
-      if(maxgtilN < gtilN[k]) maxgtilN = gtilY[k];
-      if(maxgtilY < gtilY[k]) maxgtilY = gtilY[k];
-      }
-      //				Rprintf("maxgtilY = %f\n", maxgtilY);
-      //				Rprintf("maxgtilN = %f\n", maxgtilN);
-      sgY=0.0;
-      sgN=0.0;
-      for(k=0; k<nclus_iter+1; k++){
-      gtilN[k] = exp(gtilN[k] - maxgtilY);
-      sgN = sgN + gtilN[k];
-
-      gtilY[k] = exp(gtilY[k] - maxgtilY);
-      sgY = sgY + gtilY[k];
-      }
-
-      //				Rprintf("sgY = %f\n", sgY);
-      //				Rprintf("sgN = %f\n", sgN);
-      for(k=0; k<nclus_iter; k++){
-      lgtilY = log(gtilY[k]) - log(sgY);
-      lgtilN = log(gtilN[k]) - log(sgN);
-
-      ph[k] = dmvnorm(btmp1, thtmp1, oV1, nb, ldo1, scr1, 1) +
-      dmvnorm(btmp2, thtmp2, oV2, nb, ldo2, scr2, 1) +
-      log((double) nh[k]) +
-      lgtilY - lgtilN; //This takes into account both cont and cat vars
-
-      //					Rprintf("lgtilY = %f\n", lgtilY);
-      //					Rprintf("lgtilN = %f\n", lgtilN);
-      }
-      //				Rprintf("mudraw = %f\n", mudraw);
-      //				Rprintf("sdraw = %f\n", sdraw);
-
-      // It is not completely clear to me what I need to do with the calibration
-      // of g(.) for a new cluster.  Do I use it's weight when standardizing?
-      ph[nclus_iter] = dmvnorm(btmp1,thetadraw1,oV1,nb,ldo1,scr1,1) +
-      dmvnorm(btmp2,thetadraw2,oV2,nb,ldo2,scr2,1) +
-      log(Mdp) +
-      log(gtilN[nclus_iter]) - log(sgN);
-
-      //				RprintVecAsMat("ph", ph, 1, nclus_iter+1);
-
-      }
-      */
-
-
-      for(k = 0; k < nclus_iter+1; k++) phtmp[k] = ph[k];
-
-
-      R_rsort(phtmp,  nclus_iter+1) ;
-
-      //			RprintVecAsMat("phtmp ", phtmp, 1, nclus_iter+1);
-
-
-      maxph = phtmp[nclus_iter];
-
-      //			Rprintf("maxph = %f\n", maxph);
-
+      
+      
+//      RprintVecAsMat("ph", ph, 1, nclus_iter+1);      
       denph = 0.0;
       for(k = 0; k < nclus_iter+1; k++){
-
         ph[k] = exp(ph[k] - maxph);
-        //				ph[k] = pow(exp(ph[k] - maxph), (1 - exp(-0.0001*(i+1))));
         denph = denph + ph[k];
-
       }
-
-      //			RprintVecAsMat("ph", ph, 1, nclus_iter+1);
 
       for(k = 0; k < nclus_iter+1; k++){
-
         probh[k] = ph[k]/denph;
-
       }
-      //			Rprintf("denph = %f\n", denph);
-
-      //			RprintVecAsMat("probh", probh, 1, nclus_iter+1);
+//      RprintVecAsMat("probh", probh, 1, nclus_iter+1);      
 
       uu = runif(0.0,1.0);
-      //			Rprintf("uu = %f\n", uu);
-
-
 
       cprobh= 0.0;;
+      iaux = nclus_iter+1;
       for(k = 0; k < nclus_iter+1; k++){
-
         cprobh = cprobh + probh[k];
-
         if (uu < cprobh){
-
           iaux = k+1;
           break;
         }
       }
-
-
-      // 			Rprintf("iaux = %d\n \n \n", iaux);
 
       if(iaux <= nclus_iter){
 
@@ -1293,29 +1068,27 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
           thetah1[b*(nclus_iter) + Si_iter[j]-1] = thetadraw1[b];
           thetah2[b*(nclus_iter) + Si_iter[j]-1] = thetadraw2[b];
         }
-
-        //				RprintVecAsMat("thetah after", thetah, nb, *nsubject);
       }
+//      RprintIVecAsMat("Si_iter", Si_iter, 1, *nsubject);      
+//      RprintIVecAsMat("nh", nh, 1, nclus_iter);      
+      
+      // need to now add the xcon to the cluster to which it was assigned;
+      if(!(*PPM)){
+        for(p = 0; p < *ncon; p++){
+          sumx[(Si_iter[j]-1)*(*ncon) + p] = sumx[(Si_iter[j]-1)*(*ncon) + p] + Xcon[j*(*ncon)+p];
+          sumx2[(Si_iter[j]-1)*(*ncon) + p] = sumx2[(Si_iter[j]-1)*(*ncon) + p] + Xcon[j*(*ncon)+p]*Xcon[j*(*ncon)+p];
+        }
 
+        // need to now add the xcat to the cluster to which it was assigned;
+        for(p = 0; p < *ncat; p++){
 
-      // 			Rprintf("Si_iter = %d\n \n \n", Si_iter[j]);
-      //			RprintIVecAsMat("Si_iter", Si_iter, 1, *nsubject);
+          nhc[((Si_iter[j]-1)*(*ncat) + p)*(max_C) + Xcat[j*(*ncat)+p]] =
+             nhc[((Si_iter[j]-1)*(*ncat) + p)*(max_C) + Xcat[j*(*ncat)+p]] + 1;
 
-      //			RprintVecAsMat("tau2h", tau2h, 1, *nsubject);
-      //			RprintVecAsMat("lamh", lamh, 1, *nsubject);
-      //			RprintVecAsMat("thetah", thetah, nb, *nsubject);
-
-
+        }
+      }
+      //RprintIVecAsMat("Si_iter", Si_iter, 1, *nsubject);
     }
-
-
-    //		RprintIVecAsMat("Si_iter", Si_iter, 1, *nsubject);
-    //		Rprintf("nclus_iter = %d\n", nclus_iter);
-
-
-
-
-
 
 
     //////////////////////////////////////////////////////////////////////////////////
@@ -1404,14 +1177,13 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
     //																				//
     //////////////////////////////////////////////////////////////////////////////////
     csobs=0;
+    csHobs=0;
     for(j = 0; j < *nsubject; j++){
 
       for(t = 0; t < nobs[j]; t++){
 
         y1_tmp[t] = y1[csobs];
         y2_tmp[t] = y2[csobs];
-
-        z_tmp[t] = z[csobs]/((double) nobs[j]);
 
         y1_b0[t] = y1_tmp[t]-beta01_iter[j];
         y2_b0[t] = y2_tmp[t]-beta02_iter[j];
@@ -1420,21 +1192,17 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
 
       }
 
-      for(kk = 0; kk < *nknots; kk++){
+      if(*balanced!=1){
+        for(t=0; t < nobs[j]*(nb); t++){
+		  H[t] = Hmat[csHobs + t];
+		}
+		csHobs = csHobs + nobs[j]*(nb);
 
-        knotstmp[kk] = knots[kk*(*nsubject) + j];
-
-      }
-
-      bktmp[0] = Boundaryknots[0*(*nsubject) + j];
-      bktmp[1] = Boundaryknots[1*(*nsubject) + j];
+        mat_transpose(H, tH, nobs[j], nb);
+        matrix_product(tH, H, HtH, nb, nb, nobs[j]);
+	  }
 
 
-//      if(*balanced==0) bsb(z_tmp, knotstmp, bktmp, H, nobs[j], *nknots, *q);
-
-      mat_transpose(H, tH, nobs[j], nb);
-
-      matrix_product(tH, H, HtH, nb, nb, nobs[j]);
 
       matrix_product(tH, y1_tmp, Hty1, nb, 1, nobs[j]);
       matrix_product(tH, y2_tmp, Hty2, nb, 1, nobs[j]);
@@ -1976,7 +1744,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
     // Posterior predictives.  I'll use ages 19, 20 ,21 and the three role variables;
     //
     //////////////////////////////////////////////////////////////////////////////////
-
+/*
     if((i > (*burn-1)) & i % ((*thin) == 0)){
 
       for(pp = 0; pp < *npred; pp++){
@@ -2017,7 +1785,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
 
             //						Rprintf("sumx = %f\n", sumx);
             //						Rprintf("sumx2 = %f\n", sumx2);
-            if(*gcontype==1){
+            if(*similarity_function==1){
               if(*consim==1){
                 lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 0, 0, 1);
                 //								lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 0, 1, 1);
@@ -2029,7 +1797,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
                 lgconN = lgconN + lgcont;
               }
             }
-            if(*gcontype==2){
+            if(*similarity_function==2){
               if(*consim==1){
                 lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 1, 0, 1);
                 //								lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 1, 1, 1);
@@ -2041,7 +1809,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
                 lgconN = lgconN + lgcont;
               }
             }
-            if(*gcontype==3){
+            if(*similarity_function==3){
               lgcont = gsimconEV(sumx, sumx2, nhtmp,alpha, 1);
               lgconN = lgconN + lgcont;
             }
@@ -2060,7 +1828,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
 
             //						Rprintf("sumx = %f\n", sumx);
             //						Rprintf("sumx2 = %f\n", sumx2);
-            if(*gcontype==1){ // Auxilliary
+            if(*similarity_function==1){ // Auxilliary
               if(*consim==1){
                 lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 0, 0, 1);
                 //								lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 0, 1, 1);
@@ -2072,7 +1840,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
                 lgconY = lgconY + lgcont;
               }
             }
-            if(*gcontype==2){ // Double Dipper
+            if(*similarity_function==2){ // Double Dipper
               if(*consim==1){
                 lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 1, 0, 1);
                 //								lgcont = gsimconNN(m0, v2, s20, sumx, sumx2, mnmle[p], nhtmp, 1, 1, 1);
@@ -2084,7 +1852,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
                 lgconY = lgconY + lgcont;
               }
             }
-            if(*gcontype==3){ // Variance
+            if(*similarity_function==3){ // Variance
               lgcont = gsimconEV(sumx, sumx2, nhtmp,alpha, 1);
               lgconY = lgconY + lgcont;
             }
@@ -2123,15 +1891,15 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
             //						RprintIVecAsMat("nhc", nhc, 1, Cvec[p]);
             //						Rprintf("nhtmp =%d\n", nhtmp);
 
-            if(*gcattype==1){
+            if(*similarity_function==1){
               lgcatt = gsimcatDM(nhc, dirweights, Cvec[p], 0, 1);
               lgcatN = lgcatN + lgcatt;
             }
-            if(*gcattype==2){
+            if(*similarity_function==2){
               lgcatt = gsimcatDM(nhc, dirweights, Cvec[p], 1, 1);
               lgcatN = lgcatN + lgcatt;
             }
-            if(*gcattype==3){
+            if(*similarity_function==3){
               //							lgcatt = gsimconEV(sumx, sumx2, nhtmp,alpha, 1);
               lgcatt = 0.0;
               for(c=0;c<Cvec[p];c++){
@@ -2156,15 +1924,15 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
 
             //						RprintIVecAsMat("nhc", nhc, 1, Cvec[p]);
 
-            if(*gcattype==1){
+            if(*similarity_function==1){
               lgcatt = gsimcatDM(nhc, dirweights, Cvec[p], 0, 1);
               lgcatY = lgcatY + lgcatt;
             }
-            if(*gcattype==2){
+            if(*similarity_function==2){
               lgcatt = gsimcatDM(nhc, dirweights, Cvec[p], 1, 1);
               lgcatY = lgcatY + lgcatt;
             }
-            if(*gcattype==3){// Use entropy
+            if(*similarity_function==3){// Use entropy
               //							lgcatt = gsimconEV(sumx, sumx2, nhtmp, alpha,  1);
               lgcatt = 0.0;
               for(c=0;c<Cvec[p];c++){
@@ -2194,7 +1962,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
         lgcon0=0.0;
         for(p=0;p<*ncon;p++){
           xcontmp[0] = Xconp[pp*(*ncon)+p];
-          if(*gcontype==1){
+          if(*similarity_function==1){
             if(*consim==1){
               lgcon0 = lgcon0 + gsimconNN(m0,v2,s20,xcontmp[0],xcontmp[0]*xcontmp[0], mnmle[p],1,0,0,1);
               //							lgcon0 = lgcon0 + gsimconNN(m0,v2,s20,xcontmp[0],xcontmp[0]*xcontmp[0], mnmle[p],1,0,1,1);
@@ -2204,7 +1972,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
               //							lgcon0 = lgcon0 + gsimconNNIG(m0, k0, nu0, s20,xcontmp[0],xcontmp[0]*xcontmp[0], mnmle[p],s2mle[p],1,0,1,1);
             }
           }
-          if(*gcontype==2){
+          if(*similarity_function==2){
             if(*consim==1){
               lgcon0 = lgcon0 + gsimconNN(m0,v2,s20,xcontmp[0],xcontmp[0]*xcontmp[0], mnmle[p],1,1,0,1);
               //							lgcon0 = lgcon0 + gsimconNN(m0,v2,s20,xcontmp[0],xcontmp[0]*xcontmp[0], mnmle[p],1,1,1,1);
@@ -2214,7 +1982,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
               //							lgcon0 = lgcon0 + gsimconNNIG(m0, k0, nu0, s20,xcontmp[0],xcontmp[0]*xcontmp[0],mnmle[p],s2mle[p],1, 1, 1,1);
             }
           }
-          if(*gcontype==3){
+          if(*similarity_function==3){
             lgcon0 = lgcon0 + gsimconEV(xcontmp[0],xcontmp[0]*xcontmp[0],1,alpha,1);
           }
         }
@@ -2229,13 +1997,13 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
           nhc[Xcatp[pp*(*ncat)+p]] = 1;
           //					RprintIVecAsMat("nhc =", nhc, 1, Cvec[p]);
 
-          if(*gcattype==1){
+          if(*similarity_function==1){
             lgcat0 = lgcat0 + gsimcatDM(nhc, dirweights, Cvec[p], 0, 1);
           }
-          if(*gcattype==2){
+          if(*similarity_function==2){
             lgcat0 = lgcat0 + gsimcatDM(nhc, dirweights, Cvec[p], 1, 1);
           }
-          if(*gcattype==3){
+          if(*similarity_function==3){
             //						lgcat0 = lgcat0 + gsimconEV(xcattmp[0], xcattmp[0]*xcattmp[0],  1,alpha, 1);
             lgcat0 = lgcat0 + -(alpha)*0;
 
@@ -2250,7 +2018,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
 
         ph[nclus_iter] = log((double) Mdp) + lgcon0 + lgcat0;
 
-        if(*gcontype==4) ph[nclus_iter] = log((double) Mdp) + log(1);
+        if(*similarity_function==4) ph[nclus_iter] = log((double) Mdp) + log(1);
 
 
         //				RprintVecAsMat("ph", ph, 1, nclus_iter+1);
@@ -2381,7 +2149,7 @@ void mcmc_bivariate_curvecluster(int *draws, int *burn, int *thin, //3
 
       }
     }
-
+*/
 
 
 

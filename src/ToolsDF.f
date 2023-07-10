@@ -96,12 +96,14 @@ c     OTHERS
       real(8) rw
       real(8) sw
       real(8) yw
+      real(8) tt
 c=======================================================================
 c     SETTING VALUES FOR SOME WORKING VARIABLES
 c=======================================================================
       dd=indi2-indi1
       dw=dble(dd)
       mw=ntrials
+      rw=0.d0
 c=======================================================================
 c     ALGORITHM
 c=======================================================================
@@ -114,15 +116,20 @@ c     · SIGMA=SUM(Y[S]:S=I[1]+1,...,I[2])
 c     LOGF1=LOG(F[1])+LOG(F[2])
 c     · LOG(F[1])=LGAMMA(A+SIGMA)+LGAMMA(B+(D*M)-SIGMA)+LGAMMA(A+B)
 c     · LOG(F[2])=-{LGAMMA(A+(D*M)+B)+LGAMMA(A)+LGAMMA(B)}
-      rw=dlgama(shpa+sw)+dlgama((shpb+(dw*mw))-sw)+dlgama(shpa+shpb)
-      logf1=rw-(dlgama(shpa+(dw*mw)+shpb)+dlgama(shpa)+dlgama(shpb))
+      tt=shpb+(dw*mw)-sw
+      rw=log_gamma(shpa+sw)+log_gamma(tt)+log_gamma(shpa+shpb)
+
+      tt=shpa+(dw*mw)+shpb
+      logf1=rw-(log_gamma(tt)+log_gamma(shpa)+log_gamma(shpb))
+
 c     LOGF2=LOG(F[3])
 c     · LOG(F[3])=SUM(LOG{BIN(M,Y[S])}:S=I[1]+1,...,I[2])
       logf2=0.d0
       do ii=1,dd
-         yw=obs(indi1+ii)
-         rw=dlgama(mw+1.d0)-(dlgama(yw+1.d0)+dlgama((mw-yw)+1.d0))
-         logf2=logf2+rw
+        yw=obs(indi1+ii)
+        tt=log_gamma((mw-yw)+1.d0)
+        rw=log_gamma(mw+1.d0)-(log_gamma(yw+1.d0)+tt)
+        logf2=logf2+rw
       end do
 c     LOGDF=LOG{DF(Y[S]:S=I[1]+1,...,I[2])}
       logdf=logf1+logf2
@@ -174,7 +181,7 @@ c     LOG(F[3])={-A-(D/2)}*LOG{1+Q(X[D])}.
 c
 c     0) LGAMMA(·): LOG-GAMMA FUNCTION.
 c
-c     1) D=I[2]-I[1]. 
+c     1) D=I[2]-I[1].
 c
 c     2) Q(X[D])=(X[D]-{MU*1[D]})'(A[D])(X[D]-{MU*1[D]}).
 c
@@ -244,7 +251,7 @@ c=======================================================================
 c     LOGF1=LOG(F[1])+LOG(F[2])
 c     · LOG(F[1])=LGAMMA(A+(D/2))-LGAMMA(A)
 c     · LOG(F[2])=-[(D/2)*{LOG(PI)+LOG(2*B)}]
-      rw=dlgama(shpa+(0.5d0*dw))-dlgama(shpa)
+      rw=log_gamma(shpa+(0.5d0*dw))-log_gamma(shpa)
       logf1=rw-((0.5d0*dw)*(logpi+dlog(2.d0*sclb)))
 c     LOGF2=LOG(F[3])
 c     · {-A-(D/2)}*LOG{1+Q(X[D])}
@@ -391,7 +398,7 @@ c=======================================================================
 c     LOGF1=LOG(F[1])+LOG(F[2])
 c     · LOG(F[1])=LGAMMA(A+(D/2))-LGAMMA(A)
 c     · LOG(F[2])=(1/2)*{LOG(KAPPA)-[D*{LOG(PI)-LOG(2*B)}]}
-      rw=dlgama(shpa+(0.5d0*dw))-dlgama(shpa)
+      rw=log_gamma(shpa+(0.5d0*dw))-log_gamma(shpa)
       logf1=rw+(0.5d0*(dlog(kappa)-(dw*(logpi+dlog(2.d0*sclb)))))
 c     LOGF2=LOG(F[3])
 c     · LOG(F[3])={-A-(D/2)}*LOG{1+Q(X[D])}
@@ -650,14 +657,14 @@ c     · SIGMA=SUM(Y[S]:S=I[1]+1,...,I[2])
 c     LOGF1=LOG(F[1])+LOG(F[2])
 c     · LOG(F[1])={A*LOG(B)}-LGAMMA(A)
 c     · LOG(F[2])=LGAMMA(A+SIGMA)-{(A+SIGMA)*LOG(B+D)}
-      rw=(shpa*dlog(ratb))-dlgama(shpa)
-      logf1=rw+(dlgama(shpa+sw)-((shpa+sw)*dlog(ratb+dw)))
+      rw=(shpa*dlog(ratb))-log_gamma(shpa)
+      logf1=rw+(log_gamma(shpa+sw)-((shpa+sw)*dlog(ratb+dw)))
 c     LOGF2=LOG(F[3])
 c     ·LOG(F[3])=SUM(-LOG(Y[S]!):S=I[1]+1,...,I[2])
       logf2=0.d0
       do ii=1,dd
          yw=obs(indi1+ii)
-         rw=dlgama(yw+1.d0)
+         rw=log_gamma(yw+1.d0)
          logf2=logf2-rw
       end do
 c     LOGDF=LOG{DF(Y[S]:S=I[1]+1,...,I[2])}

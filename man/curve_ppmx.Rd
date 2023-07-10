@@ -10,7 +10,7 @@ curve_ppmx(y, z, subject,
             Xconp=NULL,Xcatp=NULL,
             PPM, M,
             q=3, rw_order=1, balanced=1,
-            nknots,knots,npredobs,
+            nknots,npredobs,
             Aparm, modelPriors,
             similarity_function=1,
             consim, calibrate,
@@ -26,7 +26,7 @@ curve_ppmx(y, z, subject,
 \item{subject}{vector of the same length as z that identies the subject to which each measurement in y corresponds.  }
 
 \item{Xcon}{a data-frame with number of rows being equal to the number of subjects and whose columns consist of continuous covariates.  These covariates are included in the PPMx model and therefore influence clusters and thus are only used if the PPM argument is FALSE.  This argument is set to NULL by default}
-\item{Xcat}{a data-frame  with nsubject number of rows and whose columns consist of categorical covariates.  These covariates are included in the PPMx model and therefore influence clusters and thus are only used if the PPM argument is FALSE.  This argument is set to NULL by default}
+\item{Xcat}{a data-frame  with nsubject number of rows and whose columns consist of categorical covariates.  These covariates are included in the PPMx model and therefore influence clusters and thus are only used if the PPM argument is FALSE.  The categories must be labeled using integers starting at zero. This argument is set to NULL by default}
 
 \item{Xconp}{a data-frame with the number of rows corresponding to the number of out-of-sample predictions that are desired and columns consist of continuous covariates that are contained in Xcon.}
 \item{Xcatp}{a data-frame with the number of rows corresponding to the number of out-of-sample predictions that are desired and columns consist of categorical covariates that are contained in Xcat.}
@@ -41,11 +41,9 @@ curve_ppmx(y, z, subject,
 
 \item{balanced}{scalar with 1 - indicating the design was balanced in the sense that all subjects measurements occur at the same time and 0 - indicating design was not balanced.}
 
-\item{nknots}{scalar indicating the number of evenly spaced knots to be used.  This is overidden if the vector of knots is provided (see next argument)}
+\item{nknots}{scalar indicating the number of evenly spaced knots to be used.}
 
-\item{knots}{vector containing the knots to be used when formulating the spline basis matrix.}
-
-\item{npredobs}{number of time predictions to be made when predicting curve of a new subject.}
+\item{npredobs}{number of time predictions to make for each subjects curve.}
 
 \item{Aparm}{Upper bound parameter for lambda wich regulates the similarity of curves with in a cluster.  Larger values result in clusters with curves that can be more dissimilar.}
 
@@ -121,7 +119,7 @@ curve_ppmx(y, z, subject,
 }
 
 \details{
-This function is able to fit a Gaussian PPM or PPMx model as detailed in (Mueller, Quintana, and Rosner, 2011) to functional data.
+This function fits a hierarhical functional data model where B-spline coefficients are clustered using either a PPM or a PPMx prior on partitions.
 }
 
 \value{
@@ -173,7 +171,8 @@ The output list contains the following
 
 \donttest{
 
-# generate data for two clusters with 10 subjects each
+# Example with balanced data.
+# generate data for two clusters with 10 subjects each.
 
 nobs <- 100
 nsubject <- 2*10
@@ -227,7 +226,7 @@ fit <- curve_ppmx(y=cbind(y), z=z,
              Xconp=NULL, Xcatp=NULL,
              PPM=TRUE, M=1,
              q=3, rw_order=1, balanced=1,
-             nknots=nknots,  npredobs=1, knots=1,
+             nknots=nknots,  npredobs=1,
              Aparm=100,
              modelPriors=modelPriors,
              similarity_function=1,

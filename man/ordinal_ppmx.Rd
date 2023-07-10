@@ -184,7 +184,7 @@ The output list contains the following
 \donttest{
 n <- 100
 # Continuous Covariate
-X1 <- runif(n, 0,1)
+X1 <- runif(n, -1,1)
 
 # Binary Covariate
 X2 <- rbinom(n, 1, 0.5)
@@ -197,7 +197,8 @@ Y <- rbinom(n, 1, pi)
 
 keep <- 1:(n-25)
 
-X <- data.frame(X1=X1, X2=as.factor(X2))
+# standardize X1 to have mean zero and sd 1.
+X <- data.frame(X1=scale(X1), X2=as.factor(X2))
 
 Xtn <- X[keep,]
 ytn <- Y[keep]
@@ -211,8 +212,8 @@ ytt <- Y[-keep]
 co <- c(-1e5, 0, 1e5)
 
 
-#             m0   s20  v    k0   n0   a0   alpha
-simParms <- c(0.0, 1.0, 0.5, 1.0, 2.0, 0.1, 1)
+#             m0   s20  v  k0   n0   a0   alpha
+simParms <- c(0, 1.0, 0.5, 1.0, 2.0, 0.1, 1)
 #                m  s2  s  s0
 modelPriors <- c(0, 10, 1, 1)
 
@@ -237,6 +238,11 @@ fit <- ordinal_ppmx(y = ytn, co=co, X=Xtn, Xpred=Xtt,
 # R-package to estimate the partition based on Si
 pairs(cbind(Y, X), col=fit$Si[1,])
 
+# in-sample confusion matrix
+table(ytn, apply(fit$ord.fitted.values, 2, median))
+
+# out-of-sample confusion matrix based on posterior predictive samples
+table(ytt, apply(fit$ord.ppred, 2, median))
 }
 
 }

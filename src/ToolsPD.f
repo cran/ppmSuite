@@ -60,12 +60,12 @@ c     ALGORITHM
 c=======================================================================
       logpi=dlog(4.d0*datan(1.d0))
       qf=0.d0
-c      print *, "logpi", logpi 
-c      print *, "dmn", dmn 
-c      print *, "logdetsigma", logdetsigma 
-c      print *, "nu", nu 
-c      print *, "mu", mu(1), mu(2) 
-c      print *, "x", x(1), x(2) 
+c      print *, "logpi", logpi
+c      print *, "dmn", dmn
+c      print *, "logdetsigma", logdetsigma
+c      print *, "nu", nu
+c      print *, "mu", mu(1), mu(2)
+c      print *, "x", x(1), x(2)
       do ii=1,dmn
          do jj=1,dmn
             aux1=((x(ii)-mu(ii))*invsigma(ii,jj))*(x(jj)-mu(jj))
@@ -73,7 +73,7 @@ c      print *, "x", x(1), x(2)
          end do
       end do
       logdmvt=(-0.5d0*(nu+dble(dmn)))*dlog(1.d0+(qf/nu))
-      aux1=dlgama(0.5d0*(nu+dble(dmn)))-dlgama(0.5d0*nu)
+      aux1=log_gamma(0.5d0*(nu+dble(dmn)))-log_gamma(0.5d0*nu)
       aux2=((-0.5d0*dble(dmn))*(dlog(nu)+logpi))+(-0.5d0*logdetsigma)
       logdmvt=logdmvt+(aux1+aux2)
 c=======================================================================

@@ -9,7 +9,7 @@ curve_ppmx <- function(y, z, subject,
                        Xconp=NULL,Xcatp=NULL,
                        PPM, M,
                        q=3, rw_order=1, balanced=1,
-                       nknots,knots,npredobs,
+                       nknots,npredobs,
                        Aparm, modelPriors,
                        similarity_function=1,
                        consim,calibrate,
@@ -58,19 +58,61 @@ curve_ppmx <- function(y, z, subject,
     Xcatp <- cbind(rep(0,npred))
   }
 
+
   ndx <- nknots  # number of segments (inner knots)
-  bdeg <- 3 # Degree of the B-spline
 
-  Hmat <- bbase(z[subject==1],ndx=ndx)$B
+  # Best to feed in each subjects basis created from Cote's code rather than
+  # creating code in C. Not the Hmat matrix depends on the balanced argument
+  #
+  # balanced 1 - All subjects have same number of measurements and time at which
+  #              they were measure and so have same design matrix
+  #		       0 - Subjects do not have same number of measurements and they are
+  #		           measured at different time points so each subject needs their
+  #              own design matrix
 
-  K <- K1(ndx+3)
-  K[1,1] <- 1+1
+  # Unique time points
+  tt <- sort(unique(z))
+
+  # Create the basis
+  G <- bbase(tt, ndx = ndx, bdeg = q)
+
+  Hmat <- G
+
+  # For prediction
+  tpred <- seq(min(z), max(z)+npredobs, length = length(tt)+npredobs)
+  Gp <- predict.bbase(G, tpred)
+  Hmat_pred <- Gp
+
+  D <- diff(diag(ncol(G)), differences = rw_order)
+  K <- crossprod(D)
   if(rw_order != 1) stop("random walk orders not equal to 1 are not currently available.")
+
+  K[1,1] <- 1+1
+
   nb <- ncol(K)
 
-  nout <- (draws-burn)/thin;
+  if(!balanced) {
+    Hmat <- NULL
+    Hmat_pred <- NULL
+    cnobs <- 0
+    for(j in 1:nsubject){
+      ttmp <- z[(cnobs+1):(cnobs + nobs[j])]
+      bsb <- predict.bbase(G, ttmp)
+      Hmat <- c(Hmat, c(t(bsb)))
 
-  gcontype <- gcattype <- similarity_function
+      ttmp <- c(z[(cnobs+1):(cnobs + nobs[j])],
+                (z[(cnobs + nobs[j])]+1):(z[(cnobs + nobs[j])]+npredobs))
+      bsb <- predict.bbase(G, ttmp)
+      Hmat_pred <- c(Hmat_pred, c(t(bsb)))
+
+      cnobs <- cnobs + nobs[j]
+
+    }
+  }
+
+
+
+  nout <- (draws-burn)/thin;
 
   if(ncol(y) == 1){
 
@@ -83,22 +125,25 @@ curve_ppmx <- function(y, z, subject,
   	nclus <- mub0 <- sig2b0 <- rep(1, nout)
   	predclass <- matrix(1, nrow=nout, ncol=npred)
   	ppred <- matrix(0, nrow=nout, ncol=npred*npredobs)
+  	predlines <- matrix(0, nrow=nout, ncol=sum(nobs+npredobs))
   	lpml <- WAIC <- rep(0,1)
+
 
   	C.out <- .C("mcmc_curvecluster",
   	              as.integer(draws), as.integer(burn),as.integer(thin),
-  	              as.integer(nsubject),as.integer(nobs),
+  	              as.integer(nsubject), as.integer(nobs),
   	              as.double(y), as.double(t(z)),
-  	              as.integer(q), as.integer(nknots),as.double(t(knots)),as.double(t(K)),
-  	              as.integer(ncon), as.integer(ncat),as.integer(Cvec),
-  	              as.double(t(Xcon)),as.integer(t(Xcat)),
+  	              as.double(t(K)), as.integer(nb),
+  	              as.integer(ncon), as.integer(ncat), as.integer(Cvec),
+  	              as.double(t(Xcon)), as.integer(t(Xcat)),
   	              as.integer(PPM), as.double(M),
-  	              as.integer(gcontype), as.integer(gcattype),as.integer(consim),
+  	              as.integer(similarity_function), as.integer(consim),
   	              as.integer(npred),as.integer(npredobs),
   	              as.double(t(Xconp)),as.integer(t(Xcatp)),
   	              as.double(simParms), as.double(Aparm),
   	              as.integer(calibrate), as.double(modelPriors),
   	              as.double(t(Hmat)), as.integer(balanced), as.double(mh),
+  	              as.double(t(Hmat_pred)),
   	              beta.out= as.double(beta),beta0.out= as.double(beta0),
   	              sig2.out= as.double(sig2), mub0.out= as.double(mub0),
   	              sig2b0.out= as.double(sig2b0), lam.out= as.double(lam),
@@ -106,7 +151,9 @@ curve_ppmx <- function(y, z, subject,
   	              mu.out= as.double(mu),Si.out= as.integer(Si),
   	              nclus.out=as.integer(nclus),
   	              ppred.out=as.double(ppred),
-  	              predclass.out=as.integer(predclass),llike.out=as.double(llike),
+  	              predclass.out=as.integer(predclass),
+  	              predlines.out=as.double(predlines),
+  	              llike.out=as.double(llike),
   	              lpml.out=as.double(lpml),WAIC.out=as.double(WAIC))
 
     out$Si <- matrix(C.out$Si.out, nrow=nout, byrow=TRUE)
@@ -124,6 +171,7 @@ curve_ppmx <- function(y, z, subject,
   	#	out$fitted <- matrix(C.out$ispred.out, nrow=nout, byrow=TRUE)
   	#	out$ppred <- matrix(C.out$ppred.out, nrow=nout, byrow=TRUE)
   	#	out$predclass <- matrix(C.out$predclass.out, nrow=nout, byrow=TRUE)
+  	out$pred_curve <- matrix(C.out$predlines.out, nrow=nout, byrow=TRUE)
   	out$WAIC <- C.out$WAIC.out
   	out$lpml <- C.out$lpml.out
 
@@ -149,11 +197,11 @@ curve_ppmx <- function(y, z, subject,
                   as.integer(draws), as.integer(burn),as.integer(thin),
                   as.integer(nsubject),as.integer(nobs),
                   as.double(y1), as.double(y2), as.double(t(z)),
-                  as.integer(q), as.integer(nknots),as.double(t(knots)),as.double(t(K)),
+                  as.double(t(K)), as.integer(nb),
                   as.integer(ncon), as.integer(ncat),as.integer(Cvec),
                   as.double(t(Xcon)),as.integer(t(Xcat)),
                   as.integer(PPM), as.double(M),
-                  as.integer(gcontype), as.integer(gcattype),as.integer(consim),
+                  as.integer(similarity_function), as.integer(consim),
                   as.integer(npred),as.integer(npredobs),
                   as.double(t(Xconp)),as.integer(t(Xcatp)),
                   as.double(simParms), as.double(Aparm),
@@ -204,6 +252,8 @@ curve_ppmx <- function(y, z, subject,
   }
 
   out$Hmat <- Hmat
+  out$Hmat_pred <- Hmat_pred
+  out$number.of.basis <- nb
   out
 }
 

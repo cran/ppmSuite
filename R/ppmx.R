@@ -79,7 +79,7 @@ gaussian_ppmx <- function(y,X=NULL,Xpred=NULL,
         mn <- apply(Xall[,!catvars, drop=FALSE],2,mean, na.rm=TRUE)
         sd <- apply(Xall[,!catvars, drop=FALSE],2,sd, na.rm=TRUE)
         if(sum(round(mn + sd,10) == 1) != length(mn)){
-          message("Note: It appears that continuous covariates are not standardized using both training and testing observations.")
+          message("Note: It appears that continuous covariates are not standardized using both training and testing observations.  The default similarity values may not be appropriate.")
         }
   	    Xconstd <- Xall[,!catvars, drop=FALSE]
   	    Xcon <- Xconstd[1:nobs,,drop=FALSE];
