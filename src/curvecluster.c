@@ -113,7 +113,7 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
                         int *ncon, int *ncat, int *Cvec, //3
                         double *Xcon, int *Xcat, //2
                         int *PPM, double *M, //2
-                        int *similarity_function, int *consim, //3
+                        int *similarity_function, int *consim, //2
                         int *npred, int *npredobs, double *Xconp, int *Xcatp, //4
                         double *simParms, double *Aparm, //2
                         int *calibrate, double *modelPriors, //2
@@ -122,7 +122,7 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
                         double *beta, double *beta0, double *sig2, double *mub0, //4
                         double *sig2b0,double *lam, double *tau2, double *theta, //4
                         double *mu, int *Si, int *nclus, //3
-                        double *ppred, int *predclass, 
+                        double *ppred, int *predclass, // 2
                         double *predlines, double *llike, //2
                         double *lpml, double *WAIC){ //2
 
@@ -245,7 +245,7 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
   RprintIVecAsMat("Si", Si_iter, 1, *nsubject);
   RprintIVecAsMat("nh", nh, 1, nclus_iter);
   Rprintf("nclus = %d\n", nclus_iter);
-  
+
   // ===================================================================================
   //
   // scratch vectors of memory needed to update parameters
@@ -283,7 +283,7 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
   double *sumx = R_VectorInit((*nsubject)*(*ncon),0.0);
   double *sumx2 = R_VectorInit((*nsubject)*(*ncon),0.0);
   int  nhc[(*nsubject)*(*ncat)*max_C];
-  
+
   // stuff I need to update sig2 (player specific), mub0, sig2b0;
   double astar, bstar, os, ns, sumb0;
 
@@ -354,14 +354,14 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
       for(kk=0; kk<nb; kk++){
         H[t*(nb) + kk] = Hmat[t*(nb) + kk];
       }
-    }  
+    }
     for(t=0; t < nobs[0] + (*npredobs); t++){
       for(kk=0; kk<nb; kk++){
         H_pred[t*(nb) + kk] = Hmat_pred[t*(nb) + kk];
       }
 
     }
-    
+
     mat_transpose(H, tH, nobs[0], nb);
     matrix_product(tH, H, HtH, nb, nb, nobs[0]);
 
@@ -519,11 +519,11 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
 
     //		RprintIVecAsMat("Si_iter", Si_iter, 1, *nsubject);
     //		Rprintf("nclus_iter = %d\n", nclus_iter);
-    
+
     for(j = 0; j < *nsubject; j++){
 
 //      Rprintf("j = %d\n", j);
-      
+
       if(nh[Si_iter[j]-1] > 1){
 
         // Observation belongs to a non-singleton ...
@@ -549,10 +549,10 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
       }else{
 
         // Observation is a member of a singleton cluster ...
-        
-        
+
+
 //        Rprintf("Si_iter[j] = %d\n", Si_iter[j]);
-        
+
         iaux = Si_iter[j];
         //				Rprintf("iaux = %d\n", iaux);
         if(iaux < nclus_iter){
@@ -598,10 +598,10 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
           // the number of members in cluster is also swapped with the last
           nh[iaux-1] = nh[nclus_iter-1];
           nh[nclus_iter-1] = 1;
-          
-            
+
+
           if(!(*PPM)){
-            
+
             // need to swap sumx and sumx2
             for(p = 0; p < *ncon; p++){
               auxreal = sumx[(iaux-1)*(*ncon) + p];
@@ -629,7 +629,7 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
 
         // Now remove the ith obs and last cluster;
         nh[nclus_iter-1] = nh[nclus_iter-1] - 1;
-          
+
 //        Rprintf("nclus_iter = %d\n", nclus_iter);
 //        Rprintf("Si_iter = %d\n", Si_iter[j]);
 //        Rprintf("sumx1 = %f\n", sumx[(nclus_iter-1)*(*ncon) + p]);
@@ -651,11 +651,11 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
 
            }
         }
-        
+
 //        Rprintf("sumx1 = %f\n", sumx[(nclus_iter-1)*(*ncon) + p]);
-        
-        
-        // Finally, reduce the number of clusters                
+
+
+        // Finally, reduce the number of clusters
         nclus_iter = nclus_iter - 1;
 
 //        RprintVecAsMat("sumx = ", sumx, nclus_iter, *ncon);
@@ -701,13 +701,13 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
         lgconN = 0.0;
         lgcatY=0.0;
         lgcatN=0.0;
-        
-        
-       
+
+
+
         if(!(*PPM)){
-        
+
           for(p=0; p<(*ncon); p++){
-  
+
             sumxtmp = sumx[k*(*ncon) + p];
             sumx2tmp = sumx2[k*(*ncon) + p];
 
@@ -720,9 +720,9 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
                 lgcont = gsimconNNIG(m0, k0, nu0, s20, sumxtmp, sumx2tmp, mnmle[p], s2mle[p], nh[k], 0, 0, 1);
                 lgconN = lgconN + lgcont;
               }
-  
+
             }
-  
+
             if(*similarity_function==2){ //Double Dipper
               if(*consim==1){ //NN
                 lgcont = gsimconNN(m0, v2, s20, sumxtmp, sumx2tmp, mnmle[p], nh[k], 1, 0, 1);
@@ -733,20 +733,20 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
                 lgconN = lgconN + lgcont;
               }
             }
-  
+
             if(*similarity_function==3){ // Cluster Variance
               lgcont = gsimconEV(sumxtmp, sumx2tmp, nh[k], alpha,1);
               lgconN = lgconN + lgcont;
             }
-  
+
       	    // now add jth individual back;
       	    sumxtmp = sumxtmp + Xcon[j*(*ncon)+p];
       	    sumx2tmp = sumx2tmp + Xcon[j*(*ncon)+p]*Xcon[j*(*ncon)+p];
 
 //            Rprintf("sumxtmp = %f\n", sumxtmp);
 //            Rprintf("sumx2tmp = %f\n", sumx2tmp);
-  
- 
+
+
             if(*similarity_function==1){ // Auxilliary
               if(*consim==1){
                 lgcont = gsimconNN(m0, v2, s20, sumxtmp, sumx2tmp, mnmle[p], nh[k]+1, 0, 0, 1);
@@ -771,10 +771,10 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
               lgcont = gsimconEV(sumxtmp, sumx2tmp, nh[k]+1, alpha,1);
               lgconY = lgconY + lgcont;
             }
-  
+
           }
-  
- 
+
+
       	  // Now calculate similarity for the categorical covariates
           for(p=0; p<(*ncat); p++){
 //              Rprintf("p = %d\n", p);
@@ -783,8 +783,8 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
             for(c=0;c<Cvec[p];c++){
               nhctmp[c] = nhc[(k*(*ncat) + p)*(max_C) + c];
             }
-  
-  
+
+
             if(*similarity_function==1){
               lgcatt = gsimcatDM(nhctmp, dirweights, Cvec[p], 0, 1);
               lgcatN = lgcatN + lgcatt;
@@ -809,7 +809,7 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
 
             // include the categorical covariate in the kth cluster
       	  	nhctmp[Xcat[j*(*ncat)+p]] = nhctmp[Xcat[j*(*ncat)+p]] + 1;
-  
+
             if(*similarity_function==1){
               lgcatt = gsimcatDM(nhctmp, dirweights, Cvec[p], 0, 1);
               lgcatY = lgcatY + lgcatt;
@@ -832,12 +832,12 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
             }
 //            Rprintf("lgcatY = %f\n", lgcatY);
          }
-  
+
           gtilY[k] = lgconY + lgcatY;
           gtilN[k] = lgconN + lgcatN;
-          
-          
-        } // THIS ENDS THE PPMX PART.  
+
+
+        } // THIS ENDS THE PPMX PART.
 
 
 
@@ -879,7 +879,7 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
       ran_mvnorm(mu_iter, nV, nb, scr1, thetadraw);
 
       ldo = 2.0*nb*log(lamdraw);
-      
+
 //      RprintVecAsMat("thetadraw", thetadraw, 1, nb);
 
       lgcondraw = 0.0;
@@ -914,13 +914,13 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
             lgcondraw = lgcondraw + lgcont;
           }
         }
-  
+
         // similarity for categorical covariate
         for(p=0;p<(*ncat);p++){
           for(c=0;c<Cvec[p];c++){nhctmp[c] = 0;}
 
           nhctmp[Xcat[j*(*ncat)+p]] = 1;
-  
+
           if(*similarity_function==1){
             lgcatt = gsimcatDM(nhctmp, dirweights, Cvec[p], 0, 1);
             lgcatdraw = lgcatdraw + lgcatt;
@@ -933,10 +933,10 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
             lgcatdraw = lgcatdraw + -(alpha)*0;
           }
         }
-  
+
         gtilY[nclus_iter] = lgcondraw + lgcatdraw;
         gtilN[nclus_iter] = lgcondraw + lgcatdraw;
-      } 
+      }
 
 
       ph[nclus_iter] = dmvnorm(btmp,thetadraw,oV,nb,ldo,scr1,1) +
@@ -1039,7 +1039,7 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
           break;
         }
       }
-      
+
 
       if(iaux <= nclus_iter){
 
@@ -1075,7 +1075,7 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
 
         }
       }
-      
+
 //      RprintIVecAsMat("Si", Si_iter, 1, *nsubject);
 //      Rprintf("nclus = %d\n", nclus_iter);
 //      RprintVecAsMat("sumx", sumx, *ncon, nclus_iter);
@@ -1088,7 +1088,7 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
 
     //////////////////////////////////////////////////////////////////////////////////
     //																				//
-    // update player specific betas, sigma2, and beta0;								//
+    // update unit specific betas, sigma2, and beta0;								//
     //																				//
     //////////////////////////////////////////////////////////////////////////////////
     csobs=0;
@@ -1115,12 +1115,12 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
 
         mat_transpose(H, tH, nobs[j], nb);
         matrix_product(tH, H, HtH, nb, nb, nobs[j]);
-        
+
         for(t=0; t < (nobs[j]+(*npredobs))*(nb); t++){
 		  H_pred[t] = Hmat_pred[csHobs_pred + t];
 		}
 		csHobs_pred = csHobs_pred + (nobs[j]+(*npredobs))*(nb);
-        
+
 	  }
 
 //      Rprintf("csHobs = %d\n", csHobs);
@@ -1188,10 +1188,10 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
         btmp[b] = outrmvnorm[b];
         beta_iter[b*(*nsubject) + j] = btmp[b];
       }
-   
+
       matrix_product(H, btmp, Hb, nobs[j], 1, nb);
 //      RprintVecAsMat("Hb", Hb, 1, nobs[j]);
-      
+
 
       sumy_Hb = 0.0;
       for(jj = 0; jj < nobs[j]; jj++){
@@ -1199,15 +1199,15 @@ void mcmc_curvecluster(	int *draws, int *burn, int *thin, //3
       }
 
 
-      // write the predlines to file straight away so that I don't have to store them 
+      // write the predlines to file straight away so that I don't have to store them
       // in a matrix
       // out-of-sample predictions for each subject
       matrix_product(H_pred, btmp, Hb_pred, nobs[j]+(*npredobs), 1, nb);
 //      RprintVecAsMat("Hb_pred", Hb_pred, 1, nobs[j]+(*npredobs));
-      
 
-      if((i >= (*burn)) & (i % (*thin) == 0)){    
-       
+
+      if((i >= (*burn)) & (i % (*thin) == 0)){
+
         for(jj = 0; jj < nobs[j]+(*npredobs); jj++){
           predlines[ii*(N_pred) + csobs_pred] = rnorm(Hb_pred[jj], sqrt(sig2_iter[j]));
           csobs_pred = csobs_pred + 1;

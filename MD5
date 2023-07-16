@@ -1,4 +1,4 @@
-cb20fefdb4ed5b523162120c1107f8b2 *DESCRIPTION
+d3aa83ebfa1ddbc4106f722e7d9677dc *DESCRIPTION
 9a945e9da2fe046fb654ba6285452670 *NAMESPACE
 cd132e1c917d0fac7cf24145c31d48ac *R/cp_ppm.R
 f0192cb57fd676585ad5a1d61397c8dc *R/curve_ppmx.R
@@ -36,10 +36,10 @@ ab9e9ab009bc39236055e8ab5a966e89 *man/scallops.Rd
 cc05821cbb96439337045d3f8a3aa006 *src/ToolsPM.f
 97f8276fa5be188aa460956ecc7bbf84 *src/ToolsR.c
 876b1552d76c14e628489b27efe56739 *src/bivariate.curvecluster.c
-91e58e3129a328272f59f009b212b8e8 *src/curvecluster.c
+8139113129f97ca6f4f1c5880cc6f648 *src/curvecluster.c
 da9fee58e81f216ac59c3ddad243c5be *src/gaussian.ppmx.c
 4595b4451b0fa9bf37ff946ef7797d55 *src/gaussian.ppmx.missing.c
-c1f8a68fc8d0f3da23d028bee1fd646d *src/init.c
+f0ca885e5326f5a9d356efa25cbe8e87 *src/init.c
 eebece8e77090ec713c9462d49f03052 *src/matrix.c
 59361ca1e7c67019f745b86ca5cc5d99 *src/matrix.h
 dbd262b627d39c57aa27ee8c040400f7 *src/mcmcbetas.f
